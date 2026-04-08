@@ -1,12 +1,51 @@
 LPBF Tool Handoff – Local Setup and Run Instructions
-Step-by-step setup guide for local use on Windows and macOS
 
-This project started from a real LPBF problem: important manufacturability and process-related issues are often discovered too late, after time has already been spent on design and preparation. In response, I developed an LPBF-aware topology optimization and decision-support workflow that brings those concerns earlier into the process.
+This project started from a real LPBF problem: important manufacturability and process-related issues are often discovered too late, after time has already been spent on design and preparation. In response, I developed an LPBF-aware topology optimization and decision-support workflow tool that brings those concerns earlier into the process.
 
-1. Purpose
-This document explains exactly how to download, open, set up, and run the LPBF-aware topology optimization tool on a local computer. The goal is to make the setup process simple, predictable, and easy to follow for a new user.
+Key Features
+·       LPBF-aware topology optimization
+·       Geometric manufacturability reasoning
+·       Overhang, minimum feature, and trapped powder constraints
+·       Process-risk-aware surrogate integration
+·       Backend + UI workflow for setup, monitoring, and results
+·       Docker-based local setup
+·       Reusable lpbf_to package for direct Python use
+
+
+
+The project can be used in two ways:
+1. 	As a full application through the backend + UI workflow
+2. 	As a reusable Python package through the lpbf_to core library
+
+
+1. Full application:
+This readme explains exactly how to download, open, set up, and run the LPBF-aware topology optimization tool on a local computer. The goal is to make the setup process simple, predictable, and easy to follow for a new user.
+
 2. What You Will Receive
-You will receive a Google Drive link that contains the full project handoff package.
+you can now say users can get the project from either:
+GitHub:
+Option 1: Download from GitHub
+Open the GitHub repository in your browser.
+You can either:
+Clone the repository using Git:
+
+git clone https://github.com/sathvikc350/lpbf_project.git
+
+Then move into the project folder:
+cd lpbf_project
+
+or Download the ZIP file from GitHub:
+Open the repository page
+Click the green Code button
+Click Download ZIP
+Extract the ZIP file to your computer
+Open the extracted project folder
+
+
+Option 2: Use the shared handoff folder
+Drop an email to this address to request the file: sathvikc350@gmail.com
+
+
 The package should include the complete project folder with:
 •	backend code
 •	frontend UI
@@ -15,7 +54,8 @@ The package should include the complete project folder with:
 •	artifacts and required runtime files
 •	Docker setup files
 •	setup documentation
-Important: Do not try to run the project directly from Google Drive in the browser. Download it first, then extract it onto your computer.
+Important: Do not try to run the project directly from a browser preview or cloud file preview. Download it first, then open it locally on your computer.
+
 3. Before You Start
 This project is intended to run on a full computer, not on a phone or tablet.
 Supported local platforms:
@@ -164,3 +204,61 @@ For the first setup, follow this exact order:
 54.	Run docker compose up --build.
 55.	Open http://localhost:5173.
 56.	Open http://localhost:8000/docs.
+
+
+2. Reusable Python package:
+
+Using lpbf_to as a Library
+The reusable LPBF core is available as the lpbf_to Python package. This allows the main LPBF-aware engine to be used independently of the full backend/UI workflow.
+Local Install from Repository Root
+pip install -e .
+
+ 
+Example Import
+import lpbf_to
+ import lpbf_to.losses
+ import lpbf_to.surrogates
+ import lpbf_to.data
+ import lpbf_to.criteria
+
+ 
+Purpose
+This package is intended for users who want to work directly with the LPBF-aware optimization engine, losses, surrogate logic, and related utilities in Python, without going through the full web interface.
+Current Status
+The lpbf_to package is currently verified for local installation from the repository root using pip install -e ., and the main submodules import successfully.
+Basic Workflow
+3. 	Open the UI
+4. 	Define the design domain
+5. 	Add supports and loads
+6. 	Choose process settings
+7. 	Start the optimization
+8. 	Monitor progress
+9. 	Review results and analytics
+10.  Export outputs
+Outputs
+Generated files are typically stored under:
+·       artifacts/
+·       outputs/
+Detailed Setup Guide
+For full step-by-step setup instructions for Windows and macOS, see the separate setup and run guide above.
+Notes
+·       Docker is the preferred setup path for local use.
+·       Smaller validation cases are recommended for first-time testing.
+·       Larger runs may require stronger hardware and more available memory.
+·       The full application workflow and the reusable lpbf_to library are both supported in this project.
+Future Direction
+·       Broader validation
+·       Richer LPBF process intelligence
+·       Stronger deployment workflows
+·       AI-assisted engineering support
+·       Broader package-level reuse of the lpbf_to core
+Contact
+Name - Sathvik Tirukkovalluri
+Email - sathvikc350@gmail.com , sathvik30101998@gmail.com
+
+
+Acknowledgments and Upstream Resources
+This project builds on several important upstream resources. The LPBF-aware optimization workflow was developed in connection with DL4TO as the broader topology optimization foundation. The melt-pool surrogate and process-aware parts of the project were supported by publicly available melt-pool variability datasets, including stainless steel 316L, Inconel 718, and Ti-6Al-4V datasets associated with Carnegie Mellon University and related Figshare releases. These resources were important in shaping the surrogate training and process-risk-aware reasoning used in this work.
+AI Assistance Disclosure
+AI-based tools, including ChatGPT and Gemini, were used during parts of the project workflow for coding assistance, drafting support, explanation, refinement, and documentation help. All final implementation decisions, project integration, validation direction, and technical interpretation were reviewed and controlled by the project author.
+
