@@ -1,0 +1,644 @@
+This folder is Phase 3 Step 1 output.
+
+surrogate_inventory.json:
+- Inventory of candidate model weight files found in the repo at discovery time.
+- Used to locate meltpool surrogate assets and avoid relying on memory/assumptions.
+
+Expected “real” meltpool surrogate bundle:
+- /workspaces/lpbf_project/lpbf_to/surrogates/meltpool_v1/weights.pt
+- /workspaces/lpbf_project/lpbf_to/surrogates/meltpool_v1/surrogate_config.json
+- /workspaces/lpbf_project/lpbf_to/surrogates/meltpool_v1/scaler.joblib
+
+
+
+
+{
+  "root": "/workspaces/lpbf_project",
+  "num_weights_found": 49,
+  "weights": {
+    "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/P_map_W.pt": {
+      "material_guess": "unknown",
+      "filename": "P_map_W.pt",
+      "size_bytes": 66716,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/P_raw.pt": {
+      "material_guess": "unknown",
+      "filename": "P_raw.pt",
+      "size_bytes": 1170,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/P_tile_W.pt": {
+      "material_guess": "unknown",
+      "filename": "P_tile_W.pt",
+      "size_bytes": 1185,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/theta_phys_beta12.pt": {
+      "material_guess": "unknown",
+      "filename": "theta_phys_beta12.pt",
+      "size_bytes": 66766,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/theta_phys_beta64.pt": {
+      "material_guess": "unknown",
+      "filename": "theta_phys_beta64.pt",
+      "size_bytes": 66766,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/theta_raw.pt": {
+      "material_guess": "unknown",
+      "filename": "theta_raw.pt",
+      "size_bytes": 66726,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/v_map_mms.pt": {
+      "material_guess": "unknown",
+      "filename": "v_map_mms.pt",
+      "size_bytes": 66726,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/v_raw.pt": {
+      "material_guess": "unknown",
+      "filename": "v_raw.pt",
+      "size_bytes": 1170,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/v_tile_mms.pt": {
+      "material_guess": "unknown",
+      "filename": "v_tile_mms.pt",
+      "size_bytes": 1195,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/P_map_W.pt": {
+      "material_guess": "unknown",
+      "filename": "P_map_W.pt",
+      "size_bytes": 66716,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/P_raw.pt": {
+      "material_guess": "unknown",
+      "filename": "P_raw.pt",
+      "size_bytes": 1170,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/P_tile_W.pt": {
+      "material_guess": "unknown",
+      "filename": "P_tile_W.pt",
+      "size_bytes": 1185,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/theta_phys_beta12.pt": {
+      "material_guess": "unknown",
+      "filename": "theta_phys_beta12.pt",
+      "size_bytes": 66766,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/theta_phys_beta64.pt": {
+      "material_guess": "unknown",
+      "filename": "theta_phys_beta64.pt",
+      "size_bytes": 66766,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/theta_raw.pt": {
+      "material_guess": "unknown",
+      "filename": "theta_raw.pt",
+      "size_bytes": 66726,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/v_map_mms.pt": {
+      "material_guess": "unknown",
+      "filename": "v_map_mms.pt",
+      "size_bytes": 66726,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/v_raw.pt": {
+      "material_guess": "unknown",
+      "filename": "v_raw.pt",
+      "size_bytes": 1170,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/v_tile_mms.pt": {
+      "material_guess": "unknown",
+      "filename": "v_tile_mms.pt",
+      "size_bytes": 1195,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/islands_mask.pt": {
+      "material_guess": "unknown",
+      "filename": "islands_mask.pt",
+      "size_bytes": 66741,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/overhang_mask.pt": {
+      "material_guess": "unknown",
+      "filename": "overhang_mask.pt",
+      "size_bytes": 66746,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/ved_map_J_per_mm3.pt": {
+      "material_guess": "unknown",
+      "filename": "ved_map_J_per_mm3.pt",
+      "size_bytes": 66766,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/islands_mask.pt": {
+      "material_guess": "unknown",
+      "filename": "islands_mask.pt",
+      "size_bytes": 66741,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/minfeature_mask.pt": {
+      "material_guess": "unknown",
+      "filename": "minfeature_mask.pt",
+      "size_bytes": 66756,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/overhang_mask.pt": {
+      "material_guess": "unknown",
+      "filename": "overhang_mask.pt",
+      "size_bytes": 66746,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/recoater_risk_mask.pt": {
+      "material_guess": "unknown",
+      "filename": "recoater_risk_mask.pt",
+      "size_bytes": 5331,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/thermal_cluster_map.pt": {
+      "material_guess": "unknown",
+      "filename": "thermal_cluster_map.pt",
+      "size_bytes": 66776,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/thermal_cluster_mask.pt": {
+      "material_guess": "unknown",
+      "filename": "thermal_cluster_mask.pt",
+      "size_bytes": 66781,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/ved_map_J_per_mm3.pt": {
+      "material_guess": "unknown",
+      "filename": "ved_map_J_per_mm3.pt",
+      "size_bytes": 66766,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/islands_mask.pt": {
+      "material_guess": "unknown",
+      "filename": "islands_mask.pt",
+      "size_bytes": 66741,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/minfeature_mask.pt": {
+      "material_guess": "unknown",
+      "filename": "minfeature_mask.pt",
+      "size_bytes": 66756,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/overhang_mask.pt": {
+      "material_guess": "unknown",
+      "filename": "overhang_mask.pt",
+      "size_bytes": 66746,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/recoater_risk_mask.pt": {
+      "material_guess": "unknown",
+      "filename": "recoater_risk_mask.pt",
+      "size_bytes": 5331,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/thermal_cluster_map.pt": {
+      "material_guess": "unknown",
+      "filename": "thermal_cluster_map.pt",
+      "size_bytes": 66776,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/thermal_cluster_mask.pt": {
+      "material_guess": "unknown",
+      "filename": "thermal_cluster_mask.pt",
+      "size_bytes": 66781,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/ved_map_J_per_mm3.pt": {
+      "material_guess": "unknown",
+      "filename": "ved_map_J_per_mm3.pt",
+      "size_bytes": 66766,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/baseline_metadata.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_183024/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_in718_20260211_194044/manifest.json",
+        "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203/manifest.json"
+      ]
+    },
+    "/workspaces/lpbf_project/lpbf_to/surrogates/meltpool_v1/weights.pt": {
+      "material_guess": "unknown",
+      "filename": "weights.pt",
+      "size_bytes": 22404,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/lpbf_to/surrogates/meltpool_v1/surrogate_config.json"
+      ]
+    },
+    "/workspaces/lpbf_project/notebooks/best_meltpool_surrogate.pt": {
+      "material_guess": "unknown",
+      "filename": "best_meltpool_surrogate.pt",
+      "size_bytes": 22964,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/.devcontainer/devcontainer.json",
+        "/workspaces/lpbf_project/docs/Main Engine Scope & Limitation.txt",
+        "/workspaces/lpbf_project/docs/phase0_scope_and_assumptions..txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/SOURCES.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/dependency_links.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/requires.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/top_level.txt",
+        "/workspaces/lpbf_project/outputs/surrogate_summary.txt"
+      ]
+    },
+    "/workspaces/lpbf_project/notebooks/best_meltpool_surrogate_400.pt": {
+      "material_guess": "unknown",
+      "filename": "best_meltpool_surrogate_400.pt",
+      "size_bytes": 23008,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/.devcontainer/devcontainer.json",
+        "/workspaces/lpbf_project/docs/Main Engine Scope & Limitation.txt",
+        "/workspaces/lpbf_project/docs/phase0_scope_and_assumptions..txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/SOURCES.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/dependency_links.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/requires.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/top_level.txt",
+        "/workspaces/lpbf_project/outputs/surrogate_summary.txt"
+      ]
+    },
+    "/workspaces/lpbf_project/outputs/surrogate_synth.pt": {
+      "material_guess": "unknown",
+      "filename": "surrogate_synth.pt",
+      "size_bytes": 74456,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/.devcontainer/devcontainer.json",
+        "/workspaces/lpbf_project/docs/Main Engine Scope & Limitation.txt",
+        "/workspaces/lpbf_project/docs/phase0_scope_and_assumptions..txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/SOURCES.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/dependency_links.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/requires.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/top_level.txt",
+        "/workspaces/lpbf_project/outputs/surrogate_summary.txt"
+      ]
+    },
+    "/workspaces/lpbf_project/scripts/pv_latest.pt": {
+      "material_guess": "unknown",
+      "filename": "pv_latest.pt",
+      "size_bytes": 1254,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/.devcontainer/devcontainer.json",
+        "/workspaces/lpbf_project/docs/Main Engine Scope & Limitation.txt",
+        "/workspaces/lpbf_project/docs/phase0_scope_and_assumptions..txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/SOURCES.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/dependency_links.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/requires.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/top_level.txt",
+        "/workspaces/lpbf_project/outputs/surrogate_summary.txt"
+      ]
+    },
+    "/workspaces/lpbf_project/scripts/theta_checkpoint_BINARIZE.pt": {
+      "material_guess": "unknown",
+      "filename": "theta_checkpoint_BINARIZE.pt",
+      "size_bytes": 66870,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/.devcontainer/devcontainer.json",
+        "/workspaces/lpbf_project/docs/Main Engine Scope & Limitation.txt",
+        "/workspaces/lpbf_project/docs/phase0_scope_and_assumptions..txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/SOURCES.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/dependency_links.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/requires.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/top_level.txt",
+        "/workspaces/lpbf_project/outputs/surrogate_summary.txt"
+      ]
+    },
+    "/workspaces/lpbf_project/scripts/theta_checkpoint_RESTORE_AND_BIN.pt": {
+      "material_guess": "unknown",
+      "filename": "theta_checkpoint_RESTORE_AND_BIN.pt",
+      "size_bytes": 66969,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/.devcontainer/devcontainer.json",
+        "/workspaces/lpbf_project/docs/Main Engine Scope & Limitation.txt",
+        "/workspaces/lpbf_project/docs/phase0_scope_and_assumptions..txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/SOURCES.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/dependency_links.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/requires.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/top_level.txt",
+        "/workspaces/lpbf_project/outputs/surrogate_summary.txt"
+      ]
+    },
+    "/workspaces/lpbf_project/scripts/theta_checkpoint_SHAPE.pt": {
+      "material_guess": "unknown",
+      "filename": "theta_checkpoint_SHAPE.pt",
+      "size_bytes": 66855,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/.devcontainer/devcontainer.json",
+        "/workspaces/lpbf_project/docs/Main Engine Scope & Limitation.txt",
+        "/workspaces/lpbf_project/docs/phase0_scope_and_assumptions..txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/SOURCES.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/dependency_links.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/requires.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/top_level.txt",
+        "/workspaces/lpbf_project/outputs/surrogate_summary.txt"
+      ]
+    },
+    "/workspaces/lpbf_project/scripts/theta_checkpoint_SHARPEN.pt": {
+      "material_guess": "unknown",
+      "filename": "theta_checkpoint_SHARPEN.pt",
+      "size_bytes": 66865,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/.devcontainer/devcontainer.json",
+        "/workspaces/lpbf_project/docs/Main Engine Scope & Limitation.txt",
+        "/workspaces/lpbf_project/docs/phase0_scope_and_assumptions..txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/SOURCES.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/dependency_links.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/requires.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/top_level.txt",
+        "/workspaces/lpbf_project/outputs/surrogate_summary.txt"
+      ]
+    },
+    "/workspaces/lpbf_project/scripts/theta_checkpoint_STAGE_A.pt": {
+      "material_guess": "unknown",
+      "filename": "theta_checkpoint_STAGE_A.pt",
+      "size_bytes": 66865,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/.devcontainer/devcontainer.json",
+        "/workspaces/lpbf_project/docs/Main Engine Scope & Limitation.txt",
+        "/workspaces/lpbf_project/docs/phase0_scope_and_assumptions..txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/SOURCES.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/dependency_links.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/requires.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/top_level.txt",
+        "/workspaces/lpbf_project/outputs/surrogate_summary.txt"
+      ]
+    },
+    "/workspaces/lpbf_project/scripts/theta_checkpoint_STAGE_B.pt": {
+      "material_guess": "unknown",
+      "filename": "theta_checkpoint_STAGE_B.pt",
+      "size_bytes": 66865,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/.devcontainer/devcontainer.json",
+        "/workspaces/lpbf_project/docs/Main Engine Scope & Limitation.txt",
+        "/workspaces/lpbf_project/docs/phase0_scope_and_assumptions..txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/SOURCES.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/dependency_links.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/requires.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/top_level.txt",
+        "/workspaces/lpbf_project/outputs/surrogate_summary.txt"
+      ]
+    },
+    "/workspaces/lpbf_project/scripts/theta_checkpoint_STAGE_C.pt": {
+      "material_guess": "unknown",
+      "filename": "theta_checkpoint_STAGE_C.pt",
+      "size_bytes": 66865,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/.devcontainer/devcontainer.json",
+        "/workspaces/lpbf_project/docs/Main Engine Scope & Limitation.txt",
+        "/workspaces/lpbf_project/docs/phase0_scope_and_assumptions..txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/SOURCES.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/dependency_links.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/requires.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/top_level.txt",
+        "/workspaces/lpbf_project/outputs/surrogate_summary.txt"
+      ]
+    },
+    "/workspaces/lpbf_project/scripts/theta_checkpoint_TIGHTEN_VF.pt": {
+      "material_guess": "unknown",
+      "filename": "theta_checkpoint_TIGHTEN_VF.pt",
+      "size_bytes": 66880,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/.devcontainer/devcontainer.json",
+        "/workspaces/lpbf_project/docs/Main Engine Scope & Limitation.txt",
+        "/workspaces/lpbf_project/docs/phase0_scope_and_assumptions..txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/SOURCES.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/dependency_links.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/requires.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/top_level.txt",
+        "/workspaces/lpbf_project/outputs/surrogate_summary.txt"
+      ]
+    },
+    "/workspaces/lpbf_project/scripts/theta_latest.pt": {
+      "material_guess": "unknown",
+      "filename": "theta_latest.pt",
+      "size_bytes": 66741,
+      "sidecars_nearby": [
+        "/workspaces/lpbf_project/.devcontainer/devcontainer.json",
+        "/workspaces/lpbf_project/docs/Main Engine Scope & Limitation.txt",
+        "/workspaces/lpbf_project/docs/phase0_scope_and_assumptions..txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/SOURCES.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/dependency_links.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/requires.txt",
+        "/workspaces/lpbf_project/lpbf_to.egg-info/top_level.txt",
+        "/workspaces/lpbf_project/outputs/surrogate_summary.txt"
+      ]
+    }
+  },
+  "notes": "This is a discovery inventory only. Probe script will determine which weights are valid surrogates."
+}

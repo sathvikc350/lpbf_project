@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lpbf_to"
+version = "0.0.1"
+description = "LPBF-aware topology optimization: SIMP + printability + process-risk surrogate"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{name="Sathvik"}]
+dependencies = [
+  "numpy>=1.26",
+  "scipy>=1.10",
+  "torch==2.5.1",
+  "pyvista>=0.43.0",
+  "tqdm",
+  "einops",
+  "loguru",
+  "pandas>=2.2",
+  "pyarrow>=14"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["lpbf_to*"]

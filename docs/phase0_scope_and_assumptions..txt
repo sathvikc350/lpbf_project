@@ -1,0 +1,192 @@
+Surrogate Model – Validity Window and Assumptions
+
+Project: LPBF Process-Aware Topology Optimization
+Surrogate Purpose: Predict melt-pool width and depth for LPBF process parameters
+Integration Target: DL4TO (Differentiable Topology Optimization)
+
+## 1. Optimization Scope
+- First DL4TO integration will be run for a **single material**
+- Selected material: ______________________ (Ti64 OR IN718)
+- Multi-material optimization is out of scope for Phase 1
+
+## 2. Experimental Context
+- Surrogate trained on **single-track / sparse LPBF experiments**
+- Hatch spacing and layer thickness are **nominal values**
+- No melt-pool overlap effects modeled
+
+## 3. Surrogate Validity Window
+Laser Power (P):
+- P_min = 100 W
+- P_max = 600 W
+
+Scan Speed (v):
+- v_min = 400 mm/s
+- v_max = 1700 mm/s
+
+Nominal Geometry Parameters:
+- Hatch spacing (h) = 0.10 - 0.11 mm
+- Layer thickness (t) = 0.03 - 0.04 mm
+
+Machine / Dataset Context:
+- Machine type: ______________________
+- Source papers: ______________________
+
+## 4. Units Contract (Strict)
+- Laser Power (P): Watts (W)
+- Scan Speed (v): mm/s
+- Hatch spacing (h): mm
+- Layer thickness (t): mm
+- Melt-pool width/depth: micrometers (µm)
+
+Derived Quantities:
+- LED = P / v   [J/mm]
+- VED = P / (v * h * t)   [J/mm³]
+
+## 5. Intended Use
+- Surrogate used **inside topology optimization**
+- Predictions used for **relative process risk**, not absolute certification
+- Valid only within trained parameter ranges
+
+
+
+
+
+
+
+**Project:** LPBF Process-Aware Topology Optimization
+**Surrogate Purpose:** Predict melt-pool width and depth for LPBF process parameters
+**Integration Target:** DL4TO (Differentiable Topology Optimization)
+
+---
+
+### 1. Dataset Overview
+
+The melt-pool surrogate is trained on a combined experimental dataset consisting of:
+
+* **Materials:** 316L Stainless Steel, Inconel 718, Ti-6Al-4V (Ti64)
+* **Experiment Type:** Single-track / sparse LPBF experiments
+* **Data Sources:** Peer-reviewed experimental studies and CMU melt-pool datasets
+* **Total Samples:** 1012
+
+The surrogate predicts:
+
+* Melt-pool width (µm)
+* Melt-pool depth (µm)
+
+---
+
+### 2. Global Surrogate Validity Window
+
+The surrogate is only valid within the parameter ranges observed in the training data.
+
+**Laser Power (P):**
+
+* ( P \in [100, 600] ) W
+
+**Scan Speed (v):**
+
+* ( v \in [400, 1700] ) mm/s
+
+Predictions outside these ranges constitute extrapolation and are not considered reliable.
+
+---
+
+### 3. Material-Specific Validity Windows
+
+**316L Stainless Steel**
+
+* ( P \in [100, 600] ) W
+* ( v \in [400, 1100] ) mm/s
+
+**Inconel 718**
+
+* ( P \in [100, 600] ) W
+* ( v \in [400, 1100] ) mm/s
+
+**Ti-6Al-4V (Ti64)**
+
+* ( P \in [200, 370] ) W
+* ( v \in [1300, 1700] ) mm/s
+
+For DL4TO integration, optimization will be performed **per material**, not across materials.
+
+---
+
+### 4. Fixed Process Assumptions
+
+The experimental datasets are based on **single-track scans**.
+As a result, hatch spacing and layer thickness are treated as **nominal constants** rather than experimental variables.
+
+**Nominal Hatch Spacing (h):**
+
+* 316L / IN718: 0.11 mm
+* Ti64: 0.10 mm
+
+**Nominal Layer Thickness (t):**
+
+* 316L / IN718: 0.04 mm
+* Ti64: 0.03 mm
+
+These values are used only to compute energy-based metrics.
+
+---
+
+### 5. Energy Metrics
+
+The following physics-derived metrics are included:
+
+**Linear Energy Density (LED):**
+[
+LED = \frac{P}{v} \quad [J/mm]
+]
+
+**Volumetric Energy Density (VED):**
+[
+VED = \frac{P}{v \cdot h \cdot t} \quad [J/mm^3]
+]
+
+Observed ranges in the dataset:
+
+* LED ∈ [0.091, 1.500] J/mm
+* VED ∈ [20.661, 340.909] J/mm³
+
+---
+
+### 6. Unit Convention (Strict)
+
+All inputs and outputs must follow these units:
+
+* Power: W
+* Scan speed: mm/s
+* Hatch spacing: mm
+* Layer thickness: mm
+* Melt-pool width: µm
+* Melt-pool depth: µm
+
+No unit conversions occur inside DL4TO.
+
+---
+
+### 7. Intended Use in DL4TO
+
+* The surrogate is **frozen** during topology optimization.
+* Laser Power (P) and Scan Speed (v) are treated as **bounded, learnable parameters**.
+* Geometry-dependent process risk is penalized via a differentiable loss term.
+* The surrogate is not used for porosity prediction or multi-track interactions.
+
+---
+
+### 8. Scope Limitation (First Integration)
+
+The first DL4TO integration will use:
+
+* **Single material**
+* **Fixed hatch spacing and layer thickness**
+* **Region-based process parameters (K-tiles)**
+
+Multi-material optimization and scan-strategy effects are outside the current scope.
+
+---
+
+**This document defines the scientific and computational validity boundaries of the melt-pool surrogate. All DL4TO integration and optimization must remain within these assumptions.**
+

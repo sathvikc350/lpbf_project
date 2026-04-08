@@ -1,0 +1,129 @@
+{
+  "phase": "Phase-2 Diagnostics",
+  "created_unix_s": 1770838871.0754385,
+  "baseline_dir": "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852",
+  "engine_sha256": "9f5e72f637757cbcf9c18a0db7433a65fbe38cade38f3d9545971cacfd43ce39",
+  "baseline_folder_sha256": {
+    "baseline_metadata.json": "ca062761a5fd17d0bb92881c1e01b622897a8d83ca4e99d5d4ffbd2225ed910c",
+    "theta_raw.pt": "ab8cdfa758664779faa52b422835e5f767a190c6d2b1b38adc3b8e21a05e9ee4",
+    "theta_phys_beta64.pt": "57e79e536a67d427f36ba8740fde693f5d310dc89e13bdb1c74e848637dbe03f",
+    "pv_hist.png": "81e6835e247710d15f9aaf93065cb199f81231d974aa391a5fdd5eee92ef1083",
+    "vf_trace.png": "b9d622749f0219b90f1b9be5084a1f51ce441ab8951fe7cd18df7ff1c0de1774",
+    "theta_phys_beta64_slices.png": "904da5fcf7b0d12fce1154e167f409cdddeacb045637edcaec5db18d5fa31175",
+    "run.log": "5840054b656e74530a036d458bde73206889687146ce7a816ca94f246680cfd5"
+  },
+  "gate_a": {
+    "beta_bin": 64.0,
+    "bit_equal": true,
+    "max_abs_diff": 0.0,
+    "pass": true,
+    "note": "Pass if bit-for-bit identical OR max_abs_diff <= 1e-12."
+  },
+  "conventions_locked": {
+    "overhang_angle_measured_from": "horizontal_build_plate",
+    "overhang_threshold_deg": 45.0,
+    "violation_condition": "angle_from_horizontal < threshold (ceiling-like)",
+    "solid_threshold": 0.5,
+    "islands_definition": "solid voxels not connected to Z=0 (6-connectivity)"
+  },
+  "DIAGNOSTIC_THRESHOLDS": {
+    "voxel_size_mm": 0.25,
+    "minfeature_erosion_passes": 1,
+    "recoater_step_vox": 2,
+    "recoater_step_mm": 0.5,
+    "thermal_cluster_kernel_vox": [
+      5,
+      5,
+      5
+    ],
+    "thermal_cluster_thresh": 0.85
+  },
+  "ASSUMED_PROCESS_CONSTANTS": {
+    "hatch_spacing_mm": 0.1,
+    "layer_thickness_mm": 0.04,
+    "ved_formula": "VED = P / (v * h * t) (J/mm^3)",
+    "note": "These constants are placeholders unless confirmed per machine/material process window."
+  },
+  "ved_summary": {
+    "ved_min": 47.12691879272461,
+    "ved_max": 48.36641311645508,
+    "ved_mean": 47.771270751953125,
+    "p5": 47.12691879272461,
+    "p50": 47.78931427001953,
+    "p95": 48.36641311645508
+  },
+  "overhang_stats": {
+    "overhang_deg_from_horizontal": 45.0,
+    "solid_thresh": 0.5,
+    "eval_surface_voxels": 3888.0,
+    "violation_surface_voxels": 753.0,
+    "violation_fraction_on_surface": 0.19367283950617284
+  },
+  "islands_stats": {
+    "solid_thresh": 0.5,
+    "solid_voxels": 3985.0,
+    "island_voxels": 0.0,
+    "island_fraction_of_solid": 0.0
+  },
+  "minfeature_stats": {
+    "solid_thresh": 0.5,
+    "erosion_passes": 1,
+    "kernel": "3x3x3",
+    "solid_voxels": 3985.0,
+    "thin_voxels": 2588.0,
+    "thin_fraction_of_solid": 0.6494353826850691
+  },
+  "recoater_stats": {
+    "solid_thresh": 0.5,
+    "recoater_step_vox": 2,
+    "recoater_step_mm": 0.5,
+    "risk_xy_cells": 270.0,
+    "total_xy_cells": 1024.0,
+    "risk_fraction_xy": 0.263671875
+  },
+  "thermal_cluster_stats": {
+    "solid_thresh": 0.5,
+    "kernel_vox": [
+      5,
+      5,
+      5
+    ],
+    "cluster_thresh": 0.85,
+    "solid_voxels": 3985.0,
+    "cluster_voxels": 1235.0,
+    "cluster_fraction_of_solid": 0.3099121706398996,
+    "p5": 0.47158369421958923,
+    "p50": 0.7485300898551941,
+    "p95": 0.99266517162323
+  },
+  "env": {
+    "python": "3.10.19 (main, Oct  9 2025, 22:45:33) [GCC 14.2.0]",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.41",
+    "torch": "2.5.1+cpu",
+    "numpy": "1.26.4",
+    "dl4to": "0.0.1",
+    "lpbf_to": "UNKNOWN"
+  },
+  "git_commit": "UNKNOWN",
+  "artifacts_sha256": {
+    "overhang_mask.pt": "661626ddae36b806a802535f42ed427088b1dde3e7605def21ff3ab05445d11b",
+    "overhang_slices.png": "3961ee73dc85c71ac22938e93bb97094608de3afcb7392d0fb0f7a5d964f0d05",
+    "islands_mask.pt": "cef0d5aaa8175a51af933a86b0215a8e57e8466bc75c785ca26df46804ab37b5",
+    "islands_slices.png": "f9b441816d152375b90076a1270e4ad4d27d65c67ca4a28711fe0edd857c5ff6",
+    "ved_map_J_per_mm3.pt": "a19bf6c5887a5a7941d4977c732e37c808630aa5be838bac9450453735655a67",
+    "ved_slices.png": "d2a0a48c8a61944167d60afaf27956766796dc23a22754f8880d988899f877ab",
+    "ved_hist.png": "bfe32d816fcbf1864c74c2ef23dc38f4a4970bc03ee8b9e886ba81b9f307521a",
+    "P_hist.png": "8675e6e76b500277c7ae02bd7ac02d965ff8a98c22422388142475e0cb3b11e9",
+    "v_hist.png": "0fcfa318268d6f34233aaf0bffab0b5551711b2d0c20571e101507f148d2ccd0",
+    "minfeature_mask.pt": "77813b86f00bc173316d6408d64e252c535f0fda11f94b47c56cd00d822be84e",
+    "minfeature_slices.png": "877d604481c2ce151ec3a73249af22457b4688cc8b443ac8326756362a96f2ca",
+    "recoater_risk_mask.pt": "a9b54a4443e9f38815768ebc9b2253c8c9896f122a175ddd4bde8e26068d3917",
+    "recoater_heightmap.png": "14ecba43aca36d1b3a09e32ee6e2621363200347b0f7764835a7b46b6f0734ee",
+    "recoater_risk.png": "bed455dcd9c508943c20a8da2d12dec71d24e7269288a78449ee212b60e6b365",
+    "thermal_cluster_map.pt": "e4822a5b6adf75524af5c366ec92c51c2c40210ccba673f36a3c5ba86121c549",
+    "thermal_cluster_slices.png": "8261c8d82741d99603ac5b7e53c3cdd44f467829d460a857a5b057bfd3f0e187",
+    "thermal_cluster_mask.pt": "09da2f4bfca3425eac95b91b0b13e1464846c5575be4ac7df6a055bf8bc006db",
+    "thermal_cluster_mask_slices.png": "58a500bd6af8ee5bf54572f1839ead2ec6402d29cc81317bc69ce268dfa92839",
+    "ved_vs_cluster_scatter.png": "4c054c36ae7d61392f5006a8fc1ac7d0410eee53e2a8d8b49f5a2f602edf053f"
+  }
+}

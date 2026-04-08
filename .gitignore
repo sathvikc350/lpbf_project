@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+.venv/
+venv/
+.env
+.env.*
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs / temp
+*.log
+*.tmp
+*.swp
+.DS_Store
+
+# Frontend
+ui/node_modules/
+ui/dist/
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+
+# Project outputs
+outputs/
+artifacts/runs/
+
+# VS Code / local dev
+.vscode/
+.devcontainer/
+
+# OS / misc
+Thumbs.db

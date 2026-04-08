@@ -1,0 +1,174 @@
+{
+  "phase": "Phase-3 Scoreboard",
+  "created_unix_s": 1771279616.0685055,
+  "engine_dir": "/workspaces/lpbf_project/artifacts/phase4_engine_freeze_locked_in718_20260216_205826/phase1_engine_locked_in718_20260210_204852",
+  "registry_path": "/workspaces/lpbf_project/artifacts/phase4_negative_tests_20260216_220651/registry_tampered/material_registry.json",
+  "probe_mode": "virtual_overlay",
+  "bundle_identity": {
+    "bundle_dir": "/workspaces/lpbf_project/artifacts/phase4_engine_freeze_locked_in718_20260216_205826/surrogate_bundle/meltpool_v1",
+    "cfg_path": "/workspaces/lpbf_project/artifacts/phase4_engine_freeze_locked_in718_20260216_205826/surrogate_bundle/meltpool_v1/surrogate_config.json",
+    "weights_path": "/workspaces/lpbf_project/artifacts/phase4_engine_freeze_locked_in718_20260216_205826/surrogate_bundle/meltpool_v1/weights.pt",
+    "cfg_sha256": "6f6d7c27f0a1552ed150a00dc12147cfcb387a8e33fe31445ddd53bd78e516c2",
+    "weights_sha256": "3d895a6886f490e02453c483b1f584e59ed21deeac1e4f7f29e4660203fdae19",
+    "contract_id": "bd99c66c6359c278c2bf825d3ab42368acf5c0bedc021110699e0bcdcbb2569f"
+  },
+  "baseline_material": "IN718",
+  "baseline_probe": {
+    "P": 350.0,
+    "v": 750.0,
+    "h": 0.11,
+    "t": 0.04,
+    "pred_um": {
+      "width_um": 196.19845581054688,
+      "depth_um": 492.46856689453125
+    }
+  },
+  "anchor": {
+    "enabled": true,
+    "rows": [
+      {
+        "material": "316L",
+        "P": 350.0,
+        "v": 1200.0,
+        "h": 0.11,
+        "t": 0.04,
+        "pred": {
+          "width_um": 156.12661743164062,
+          "depth_um": 484.6578369140625
+        },
+        "outside": true
+      },
+      {
+        "material": "IN718",
+        "P": 350.0,
+        "v": 1200.0,
+        "h": 0.11,
+        "t": 0.04,
+        "pred": {
+          "width_um": 158.93344116210938,
+          "depth_um": 481.2091064453125
+        },
+        "outside": true
+      },
+      {
+        "material": "Ti64",
+        "P": 350.0,
+        "v": 1200.0,
+        "h": 0.1,
+        "t": 0.03,
+        "pred": {
+          "width_um": 197.1248779296875,
+          "depth_um": 77.04463958740234
+        },
+        "outside": true
+      }
+    ]
+  },
+  "rows": [
+    {
+      "material": "316L",
+      "load": "PASS (Hash OK)",
+      "sensitivity": "+0.7% depth",
+      "trust": 1.0,
+      "probe": {
+        "P": 350.0,
+        "v": 750.0,
+        "h": 0.11,
+        "t": 0.04
+      },
+      "pred_um": {
+        "width_um": 194.21360778808594,
+        "depth_um": 495.7205810546875
+      },
+      "validity": {
+        "P_W": [
+          100.0,
+          600.0
+        ],
+        "v_mm_per_s": [
+          400.0,
+          1100.0
+        ],
+        "h_mm": [
+          0.11,
+          0.11
+        ],
+        "t_mm": [
+          0.04,
+          0.04
+        ]
+      }
+    },
+    {
+      "material": "IN718",
+      "load": "PASS (Hash OK)",
+      "sensitivity": "Baseline",
+      "trust": 1.0,
+      "probe": {
+        "P": 350.0,
+        "v": 750.0,
+        "h": 0.11,
+        "t": 0.04
+      },
+      "pred_um": {
+        "width_um": 196.19845581054688,
+        "depth_um": 492.46856689453125
+      },
+      "validity": {
+        "P_W": [
+          100.0,
+          600.0
+        ],
+        "v_mm_per_s": [
+          400.0,
+          1100.0
+        ],
+        "h_mm": [
+          0.11,
+          0.11
+        ],
+        "t_mm": [
+          0.04,
+          0.04
+        ]
+      }
+    },
+    {
+      "material": "Ti64",
+      "load": "PASS (Hash OK)",
+      "sensitivity": "-85.7% depth",
+      "trust": 1.0,
+      "probe": {
+        "P": 285.0,
+        "v": 1500.0,
+        "h": 0.1,
+        "t": 0.03
+      },
+      "pred_um": {
+        "width_um": 158.0740966796875,
+        "depth_um": 70.5005111694336
+      },
+      "validity": {
+        "P_W": [
+          200.0,
+          370.0
+        ],
+        "v_mm_per_s": [
+          1300.0,
+          1700.0
+        ],
+        "h_mm": [
+          0.1,
+          0.1
+        ],
+        "t_mm": [
+          0.03,
+          0.03
+        ]
+      }
+    }
+  ],
+  "hard_fail": false,
+  "warnings": [],
+  "runtime_s": 1.8374152183532715
+}

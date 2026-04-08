@@ -1,0 +1,155 @@
+{
+  "created_unix_s": 1770948767.4720495,
+  "engine_dir": "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852",
+  "registry_dir": "/workspaces/lpbf_project/artifacts/phase3_registry_locked_in718_20260212_212457",
+  "registry_path": "/workspaces/lpbf_project/artifacts/phase3_registry_locked_in718_20260212_212457/material_registry.json",
+  "surrogate_bundle": {
+    "bundle_dir": "/workspaces/lpbf_project/lpbf_to/surrogates/meltpool_v1",
+    "surrogate_config_path": "/workspaces/lpbf_project/lpbf_to/surrogates/meltpool_v1/surrogate_config.json",
+    "weights_path": "/workspaces/lpbf_project/lpbf_to/surrogates/meltpool_v1/weights.pt",
+    "surrogate_config_sha256": "6f6d7c27f0a1552ed150a00dc12147cfcb387a8e33fe31445ddd53bd78e516c2",
+    "weights_sha256": "3d895a6886f490e02453c483b1f584e59ed21deeac1e4f7f29e4660203fdae19",
+    "surrogate_contract_id": "bd99c66c6359c278c2bf825d3ab42368acf5c0bedc021110699e0bcdcbb2569f"
+  },
+  "probe_point": {
+    "P_W": 300.0,
+    "v_mm_per_s": 900.0
+  },
+  "IN718_probe_pred_um": {
+    "width_um": 168.69285583496094,
+    "depth_um": 483.17138671875
+  },
+  "per_material": {
+    "316L": {
+      "material_id": 0,
+      "h_mm": 0.11,
+      "t_mm": 0.04,
+      "validity_window": {
+        "P_W": [
+          100.0,
+          600.0
+        ],
+        "v_mm_per_s": [
+          400.0,
+          1100.0
+        ],
+        "h_mm": [
+          0.11,
+          0.11
+        ],
+        "t_mm": [
+          0.04,
+          0.04
+        ],
+        "VED_J_per_mm3": null,
+        "LED_J_per_mm": null
+      },
+      "probe_pred_um": {
+        "width_um": 166.8650360107422,
+        "depth_um": 486.5455017089844
+      },
+      "trust": {
+        "inside_voxels": 4497,
+        "solid_voxels": 4497,
+        "trust_fraction": 1.0
+      },
+      "mass_audit": {
+        "voxel_size_mm": 0.25,
+        "solid_voxels": 4497,
+        "density_g_per_cm3": 0.0,
+        "est_mass_kg": NaN
+      }
+    },
+    "IN718": {
+      "material_id": 1,
+      "h_mm": 0.11,
+      "t_mm": 0.04,
+      "validity_window": {
+        "P_W": [
+          100.0,
+          600.0
+        ],
+        "v_mm_per_s": [
+          400.0,
+          1100.0
+        ],
+        "h_mm": [
+          0.11,
+          0.11
+        ],
+        "t_mm": [
+          0.04,
+          0.04
+        ],
+        "VED_J_per_mm3": null,
+        "LED_J_per_mm": null
+      },
+      "probe_pred_um": {
+        "width_um": 168.69285583496094,
+        "depth_um": 483.17138671875
+      },
+      "trust": {
+        "inside_voxels": 4497,
+        "solid_voxels": 4497,
+        "trust_fraction": 1.0
+      },
+      "mass_audit": {
+        "voxel_size_mm": 0.25,
+        "solid_voxels": 4497,
+        "density_g_per_cm3": 0.0,
+        "est_mass_kg": NaN
+      }
+    },
+    "Ti64": {
+      "material_id": 2,
+      "h_mm": 0.1,
+      "t_mm": 0.03,
+      "validity_window": {
+        "P_W": [
+          200.0,
+          370.0
+        ],
+        "v_mm_per_s": [
+          1300.0,
+          1700.0
+        ],
+        "h_mm": [
+          0.1,
+          0.1
+        ],
+        "t_mm": [
+          0.03,
+          0.03
+        ],
+        "VED_J_per_mm3": null,
+        "LED_J_per_mm": null
+      },
+      "probe_pred_um": {
+        "width_um": 211.47300720214844,
+        "depth_um": 81.6725082397461
+      },
+      "trust": {
+        "inside_voxels": 0,
+        "solid_voxels": 4497,
+        "trust_fraction": 0.0
+      },
+      "mass_audit": {
+        "voxel_size_mm": 0.25,
+        "solid_voxels": 4497,
+        "density_g_per_cm3": 0.0,
+        "est_mass_kg": NaN
+      }
+    }
+  },
+  "hard_fail": false,
+  "warnings": [
+    "WARN: Low trust coverage for Ti64: 0.0%"
+  ],
+  "env": {
+    "python": "3.10.19 (main, Oct  9 2025, 22:45:33) [GCC 14.2.0]",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.41",
+    "torch": "2.5.1+cpu",
+    "numpy": "1.26.4"
+  },
+  "git_commit": "UNKNOWN"
+}

@@ -1,0 +1,692 @@
+from __future__ import annotations
+
+import os
+import json
+import gc
+from typing import Optional, List, Any, Dict, Tuple
+
+# SciPy UMFPACK flag hotfix (keep)
+try:
+    import scipy.sparse.linalg._dsolve.linsolve as _linsolve  # type: ignore
+    use_umf = getattr(_linsolve, "useUmfpack", None)
+    if use_umf is not None:
+        try:
+            _ = getattr(use_umf, "u")
+        except Exception:
+            try:
+                setattr(use_umf, "u", False)
+            except Exception:
+                pass
+        try:
+            use_umf.u = False  # type: ignore[attr-defined]
+        except Exception:
+            pass
+except Exception:
+    pass
+
+import inspect
+import torch
+
+from dl4to.pde import FDM
+from dl4to.problem import Problem
+from dl4to.solution import Solution
+from dl4to.topo_solvers import SIMP
+from dl4to.criteria import Criterion, Compliance
+
+from lpbf_to.losses.manufacturing_loss import ManufacturingLoss, Bounds
+
+
+# ==========================================================
+# GLOBAL CONSTANTS
+# ==========================================================
+FRESH_START = True
+
+# LPBF thresholds
+D_REQ_UM = 80.0
+
+# Aspect ratio
+AR_MAX = 3.3
+AR_MIN = 0.0
+AR_W = 1.0
+
+# Masking power for mfg reduction
+RHO_POWER = 3.0
+
+# Target volume fraction (design space)
+TARGET_VF = 0.25
+
+# Domain
+NX, NY, NZ = 32, 32, 16
+
+# Checkpoints
+THETA_LATEST_PATH = "/workspaces/lpbf_project/scripts/theta_latest.pt"
+PV_LATEST_PATH = "/workspaces/lpbf_project/scripts/pv_latest.pt"
+CKPT_BASE = "/workspaces/lpbf_project/scripts/theta_checkpoint"
+
+# PV optimization
+PV_LR = 0.02
+PV_STEPS_PER_STAGE = 12
+PV_WARMUP_STEPS = 50
+RAW_CLAMP = 6.0
+
+# Stages
+STAGES: List[Dict[str, Any]] = [
+    dict(label="SHAPE", beta=2.0, w_mfg=0.10, w_bin=0.00, iters=50, d_max_um=520.0),
+    dict(label="SHARPEN", beta=4.0, w_mfg=0.20, w_bin=1.00, iters=15, d_max_um=480.0),
+    dict(label="BINARIZE", beta=12.0, w_mfg=0.20, w_bin=1.00, iters=10, d_max_um=450.0),
+]
+
+
+# ==========================================================
+# Unicode-safe accessors (avoid Greek letters in source)
+# ==========================================================
+THETA_ATTR = "\u03b8"  # θ
+OMEGA_DESIGN_ATTR = "\u03a9_design"  # Ω_design
+OMEGA_DIR_ATTR = "\u03a9_dirichlet"  # Ω_dirichlet
+NU_ATTR = "\u03bd"  # ν
+SIG_YS_ATTR = "\u03c3_ys"  # σ_ys
+ALPHA_ATTR = "\u03b1"  # α
+
+
+def get_theta(sol: Any) -> torch.Tensor:
+    for name in (THETA_ATTR, "theta", "density", "x"):
+        if hasattr(sol, name):
+            return getattr(sol, name)
+    # legacy weird encoding fallback
+    if hasattr(sol, "ÃƒÆ’Ã†’Ãƒâ€ ’ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½ÃƒÆ’Ã†’ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸"):
+        return getattr(sol, "ÃƒÆ’Ã†’Ãƒâ€ ’ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½ÃƒÆ’Ã†’ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¸")
+    raise AttributeError("Could not find theta/density on Solution object.")
+
+
+def make_solution(problem: Problem, theta: torch.Tensor) -> Solution:
+    kwargs = {THETA_ATTR: theta, "problem": problem, "enforce_\u03b8_on_\u03a9_design": True}
+    try:
+        return Solution(**kwargs)  # type: ignore[arg-type]
+    except Exception:
+        pass
+
+    kwargs2 = {THETA_ATTR: theta, "problem": problem, "enforce_theta_on_Omega_design": True}
+    try:
+        return Solution(**kwargs2)  # type: ignore[arg-type]
+    except Exception:
+        pass
+
+    try:
+        return Solution(problem=problem, theta=theta, enforce_theta_on_Omega_design=True)  # type: ignore
+    except Exception:
+        return Solution(problem, theta)  # type: ignore
+
+
+def get_omega_design(problem: Problem) -> torch.Tensor:
+    for name in (OMEGA_DESIGN_ATTR, "Omega_design", "omega_design", "design_domain"):
+        if hasattr(problem, name):
+            return getattr(problem, name)
+    if hasattr(problem, "ÃƒÆ’Ã†’Ãƒâ€ ’ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½ÃƒÆ’Ã†’ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©_design"):
+        return getattr(problem, "ÃƒÆ’Ã†’Ãƒâ€ ’ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½ÃƒÆ’Ã†’ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©_design")
+    raise AttributeError("Could not find Ω_design on Problem object.")
+
+
+# ==========================================================
+# Projection (tanh Heaviside projection)
+# ==========================================================
+def projection(theta: torch.Tensor, beta: float, eta: float) -> torch.Tensor:
+    eta_t = torch.as_tensor(eta, device=theta.device, dtype=theta.dtype)
+    b = torch.as_tensor(beta, device=theta.device, dtype=theta.dtype)
+    num = torch.tanh(b * eta_t) + torch.tanh(b * (theta - eta_t))
+    den = torch.tanh(b * eta_t) + torch.tanh(b * (1.0 - eta_t))
+    return num / (den + 1e-12)
+
+
+@torch.no_grad()
+def solve_eta_strict(
+    theta: torch.Tensor,
+    beta: float,
+    target_vf: float,
+    design_mask: torch.Tensor
+) -> Tuple[float, bool, float, float]:
+    """
+    Strict eta solver with eta in (0,1). Returns (eta, feasible, vf_lo, vf_hi).
+    Feasible means the target VF is bracketed within eta in (0,1).
+    """
+    lo, hi = 1e-6, 1.0 - 1e-6
+
+    def vf_at(e: float) -> float:
+        return float(projection(theta, beta, e)[design_mask].mean().item())
+
+    vf_lo = vf_at(lo)  # more material
+    vf_hi = vf_at(hi)  # less material
+
+    # Expect monotone decreasing in eta: vf_lo >= target >= vf_hi
+    feasible = (vf_lo >= target_vf >= vf_hi)
+
+    if not feasible:
+        return 0.5, False, vf_lo, vf_hi
+
+    for _ in range(40):
+        mid = 0.5 * (lo + hi)
+        vf_mid = vf_at(mid)
+        if vf_mid > target_vf:
+            lo = mid
+        else:
+            hi = mid
+
+    return float(0.5 * (lo + hi)), True, vf_lo, vf_hi
+
+
+@torch.no_grad()
+def solve_eta_with_beta(
+    theta: torch.Tensor,
+    beta: float,
+    target_vf: float,
+    design_mask: torch.Tensor
+) -> Tuple[float, float, bool, float, float]:
+    """
+    If beta is too small to make the hard VF constraint feasible, increase beta until feasible.
+    Returns (eta, beta_eff, feasible, vf_lo, vf_hi) for diagnostics.
+    """
+    beta_eff = float(beta)
+    last_vf_lo, last_vf_hi = float("nan"), float("nan")
+
+    for _ in range(6):  # beta *= 2 up to 64x
+        eta, ok, vf_lo, vf_hi = solve_eta_strict(theta, beta_eff, target_vf, design_mask)
+        last_vf_lo, last_vf_hi = vf_lo, vf_hi
+        if ok:
+            return eta, beta_eff, True, vf_lo, vf_hi
+        beta_eff *= 2.0
+
+    return 0.5, beta_eff, False, last_vf_lo, last_vf_hi
+
+
+# ==========================================================
+# Robust Compliance creation (fix alpha mis-binding bug)
+# ==========================================================
+def make_compliance(problem: Problem) -> Compliance:
+    C = None
+
+    try:
+        C = Compliance(problem=problem)  # type: ignore
+    except Exception:
+        pass
+
+    if C is None:
+        try:
+            C = Compliance(problem)  # type: ignore
+        except Exception:
+            pass
+
+    if C is None:
+        C = Compliance(1.0, problem)  # type: ignore
+
+    for attr in (ALPHA_ATTR, "alpha", "ÃƒÆ’Ã†’Ãƒâ€ ’ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â½ÃƒÆ’Ã†’ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â±"):
+        if hasattr(C, attr):
+            val = getattr(C, attr)
+            if isinstance(val, Problem):
+                setattr(C, attr, 1.0)
+            elif not isinstance(val, (int, float)) and not torch.is_tensor(val):
+                setattr(C, attr, 1.0)
+
+    return C
+
+
+# ==========================================================
+# Hard-constrained joint criterion + UNIFORM-NORMAL GRAD PROJECTION
+# ==========================================================
+class HardConstrainedJointCriterion(Criterion):
+    def __init__(
+        self,
+        problem: Problem,
+        mfg_loss: ManufacturingLoss,
+        tile_indices: torch.Tensor,
+        P_raw: torch.Tensor,
+        v_raw: torch.Tensor,
+        beta: float,
+        d_max_um: float,
+        w_mfg: float,
+        w_bin: float,
+        log_every: int = 5,
+        name: str = "joint_phys_objective",
+    ):
+        super().__init__(name=name, supervised=False, compute_only_on_design_space=False)
+        self.problem = problem
+        self.mfg_loss = mfg_loss
+        self.tile_indices = tile_indices
+        self.P_raw = P_raw
+        self.v_raw = v_raw
+        self.beta = float(beta)
+        self.d_max_um = float(d_max_um)
+        self.w_mfg = float(w_mfg)
+        self.w_bin = float(w_bin)
+        self._C = make_compliance(problem)
+
+        Omega = get_omega_design(problem).to(problem.device)
+        self.design_mask = (Omega == -1.0)
+
+        self._call_count = 0
+        self._log_every = int(max(1, log_every))
+
+        # --- hook watchdog storage (reported NEXT iteration) ---
+        self._wd_prev_hook_calls: Optional[int] = None
+        self._wd_prev_orth: Optional[float] = None
+        self._wd_prev_theta_id: Optional[int] = None
+
+        # Uniform normal cached (stable, β-independent)
+        self._a_uniform: Optional[torch.Tensor] = None
+
+    def _get_uniform_normal(self, theta: torch.Tensor) -> torch.Tensor:
+        if (self._a_uniform is None) or (self._a_uniform.shape != theta.shape) or (self._a_uniform.device != theta.device) or (self._a_uniform.dtype != theta.dtype):
+            a = torch.zeros_like(theta)
+            n = float(self.design_mask.sum().item())
+            a[self.design_mask] = 1.0 / max(n, 1.0)
+            self._a_uniform = a
+        return self._a_uniform
+
+    def __call__(
+        self,
+        solutions: List[Any],
+        gt_solutions: Optional[List[Any]] = None,
+        binary: bool = False
+    ) -> torch.Tensor:
+        outs: List[torch.Tensor] = []
+
+        # --- Watchdog: print results from previous backward pass ---
+        if self._wd_prev_hook_calls is not None:
+            print(
+                f"[WD_PREV] last_hook_calls={self._wd_prev_hook_calls} "
+                f"last_orth={self._wd_prev_orth} last_theta_id={self._wd_prev_theta_id}"
+            )
+
+        for sol in solutions:
+            theta = get_theta(sol)
+
+            # --- register hook each call (safe even if dl4to swaps theta) ---
+            a = self._get_uniform_normal(theta)
+
+            # reset "prev" storage for THIS iteration's backward, to be read next iteration
+            self._wd_prev_theta_id = id(theta)
+            self._wd_prev_hook_calls = 0
+            self._wd_prev_orth = None
+
+            def _proj_hook(grad: torch.Tensor):
+                # Count hook calls (should be >=1 per backward)
+                self._wd_prev_hook_calls = int(self._wd_prev_hook_calls or 0) + 1
+
+                # Project gradient: g_proj = g - <g,a>/<a,a> * a
+                dot = (grad * a).sum()
+                denom = (a * a).sum().clamp_min(1e-12)
+                g_proj = grad - (dot / denom) * a
+
+                # Orthogonality diagnostic: <g_proj, a> should be ~0
+                self._wd_prev_orth = float((g_proj * a).sum().detach().cpu().item())
+                return g_proj
+
+            if theta.requires_grad:
+                theta.register_hook(_proj_hook)
+                print(f"[HOOK] registered on theta id={id(theta)}")
+
+            # --- Debug: theta stats ---
+            theta_min = float(theta.min().detach().cpu())
+            theta_max = float(theta.max().detach().cpu())
+            oob = int(((theta < 0) | (theta > 1)).sum().detach().cpu())
+            print(f"[THETA] shape={tuple(theta.shape)} min={theta_min:.4f} max={theta_max:.4f} oob={oob}")
+
+            # --- Safety: clamp before ANY VF/projection logic ---
+            theta_clean = theta.clamp(0.0, 1.0)
+
+            # --- Hard VF via eta in [0,1] with beta escalation if infeasible ---
+            eta, beta_eff, feasible, vf_lo, vf_hi = solve_eta_with_beta(
+                theta_clean.detach(), self.beta, TARGET_VF, self.design_mask
+            )
+
+            # IMPORTANT: projection uses theta_clean (not theta)
+            theta_phys = projection(theta_clean, beta_eff, float(eta))
+
+            # Compliance (abs to avoid sign weirdness)
+            sol_phys = make_solution(self.problem, theta_phys)
+            loss_c_raw = self._C([sol_phys]).mean()
+            loss_c = torch.abs(loss_c_raw)
+
+            # Manufacturing loss
+            rho_input = theta_phys.squeeze(0)  # ManufacturingLoss expects (NX,NY,NZ)
+            mout = self.mfg_loss(
+                rho=rho_input,
+                P_raw=self.P_raw,
+                v_raw=self.v_raw,
+                tile_indices=self.tile_indices,
+                material="IN718",
+                h_mm=0.11,
+                t_mm=0.04,
+                d_req_um=D_REQ_UM,
+                d_max_um=self.d_max_um,
+                active_mask=None,
+            )
+            loss_m = mout["loss_total_mfg"]
+
+            # Binarization regularizer
+            loss_b = (theta_phys * (1.0 - theta_phys)).mean()
+
+            total = loss_c + (self.w_mfg * loss_m) + (self.w_bin * loss_b)
+            outs.append(total)
+
+            self._call_count += 1
+            if (self._call_count % self._log_every) == 0:
+                vf_raw = float(theta_clean[self.design_mask].mean().detach().cpu().item())
+                vf_phys = float(theta_phys[self.design_mask].mean().detach().cpu().item())
+                print(f"[ETA_FEAS] vf@lo={vf_lo:.4f} vf@hi={vf_hi:.4f} target={TARGET_VF:.4f} feasible={feasible}")
+                print(f"[VF] raw={vf_raw:.4f} phys={vf_phys:.4f} gap={abs(vf_raw - vf_phys):.4f}")
+                print(
+                    f"[PHYS] beta_req={self.beta:.2f} beta_eff={beta_eff:.2f} "
+                    f"eta={eta:.6f} VF_phys={vf_phys:.4f} | "
+                    f"C(abs)={float(loss_c):.4f} (raw {float(loss_c_raw):.4f}) "
+                    f"MFG={float(loss_m):.4f} BIN={float(loss_b):.4f}"
+                )
+                print(
+                    f"[WD_NOW] theta_requires_grad={theta.requires_grad} theta_id={id(theta)} "
+                    f"(note: hook fires AFTER this, during backward)"
+                )
+
+        return torch.stack(outs)
+
+
+# ==========================================================
+# Helpers
+# ==========================================================
+def save_tensor(t: torch.Tensor, path: str) -> None:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    torch.save(t.detach().cpu(), path)
+    print(f"[SAVE] wrote {path}")
+
+
+def try_load_tensor(path: str) -> Optional[torch.Tensor]:
+    if os.path.exists(path):
+        try:
+            try:
+                t = torch.load(path, map_location="cpu", weights_only=True)  # type: ignore[call-arg]
+            except TypeError:
+                t = torch.load(path, map_location="cpu")
+            if isinstance(t, torch.Tensor):
+                print(f"[LOAD] loaded tensor from {path}")
+                return t
+        except Exception:
+            pass
+    return None
+
+def _domain_json_path() -> str:
+    return os.environ.get("LPBF_DOMAIN_JSON", "").strip()
+
+
+def _load_domain_contract() -> Optional[Dict[str, Any]]:
+    p = _domain_json_path()
+    if not p:
+        return None
+    if not os.path.exists(p):
+        raise FileNotFoundError(f"LPBF_DOMAIN_JSON does not exist: {p}")
+    with open(p, "r") as f:
+        data = json.load(f)
+    if not isinstance(data, dict):
+        raise RuntimeError("domain.json must decode to a dict")
+    return data
+
+
+def _clamp_span(lo: int, hi: int, n: int) -> Tuple[int, int]:
+    lo2 = max(0, min(int(lo), int(n)))
+    hi2 = max(0, min(int(hi), int(n)))
+    if hi2 < lo2:
+        lo2, hi2 = hi2, lo2
+    return lo2, hi2
+
+
+def _build_problem_from_domain(domain: Optional[Dict[str, Any]], *, device: str, dtype: torch.dtype) -> Tuple[Problem, int, int, int]:
+    if domain is None:
+        nx, ny, nz = 32, 32, 16
+
+        Omega_dirichlet = torch.zeros((3, nx, ny, nz), dtype=torch.bool, device=device)
+        Omega_dirichlet[:, 0, :, :] = True
+
+        Omega_design = -torch.ones((1, nx, ny, nz), dtype=dtype, device=device)
+        Omega_design[:, 0, :, :] = 1.0
+
+        F = torch.zeros((3, nx, ny, nz), dtype=dtype, device=device)
+        F[1, -1, ny // 2 - 1: ny // 2 + 1, nz // 2 - 1: nz // 2 + 1] = -1.0
+    else:
+        grid = domain.get("grid", {})
+        nx = int(grid.get("nx"))
+        ny = int(grid.get("ny"))
+        nz = int(grid.get("nz"))
+        if min(nx, ny, nz) <= 0:
+            raise RuntimeError(f"Invalid grid in domain contract: {(nx, ny, nz)}")
+
+        Omega_dirichlet = torch.zeros((3, nx, ny, nz), dtype=torch.bool, device=device)
+        Omega_design = -torch.ones((1, nx, ny, nz), dtype=dtype, device=device)
+        F = torch.zeros((3, nx, ny, nz), dtype=dtype, device=device)
+
+        for sup in domain.get("supports", []) or []:
+            b = sup.get("bounds_ijk", {})
+            i0, i1 = _clamp_span(*b.get("i", [0, 0]), nx)
+            j0, j1 = _clamp_span(*b.get("j", [0, 0]), ny)
+            k0, k1 = _clamp_span(*b.get("k", [0, 0]), nz)
+            Omega_dirichlet[:, i0:i1, j0:j1, k0:k1] = True
+            Omega_design[:, i0:i1, j0:j1, k0:k1] = 1.0
+
+        comp_to_idx = {"fx": 0, "fy": 1, "fz": 2}
+        for load in domain.get("loads", []) or []:
+            b = load.get("bounds_ijk", {})
+            i0, i1 = _clamp_span(*b.get("i", [0, 0]), nx)
+            j0, j1 = _clamp_span(*b.get("j", [0, 0]), ny)
+            k0, k1 = _clamp_span(*b.get("k", [0, 0]), nz)
+
+            force = load.get("force", {}) or {}
+            mag = float(load.get("magnitude", 1.0))
+            for comp, idx in comp_to_idx.items():
+                val = float(force.get(comp, 0.0))
+                if val != 0.0:
+                    F[idx, i0:i1, j0:j1, k0:k1] = val * mag
+
+    prob_kwargs = dict(
+        E=1.0,
+        h=1.0,
+        F=F,
+        pde_solver=FDM(),
+        device=device,
+        dtype=dtype,
+        restrict_density_for_voxels_with_applied_forces=False,
+    )
+    prob_kwargs[NU_ATTR] = 0.3
+    prob_kwargs[SIG_YS_ATTR] = 1.0
+    prob_kwargs[OMEGA_DIR_ATTR] = Omega_dirichlet
+    prob_kwargs[OMEGA_DESIGN_ATTR] = Omega_design
+
+    problem = Problem(**prob_kwargs)  # type: ignore[arg-type]
+    return problem, nx, ny, nz
+
+
+
+# ==========================================================
+# Main
+# ==========================================================
+def main() -> None:
+    # STARTUP proof (bypass @torch.no_grad wrapper when possible)
+    def _unwrap(fn):
+        return getattr(fn, "__wrapped__", fn)
+
+    print(f"[STARTUP] Running: {__file__}")
+    print(f"[STARTUP] solve_eta_with_beta source: {inspect.getsourcefile(_unwrap(solve_eta_with_beta))}")
+    print(f"[STARTUP] solve_eta_with_beta first line: {_unwrap(solve_eta_with_beta).__code__.co_firstlineno}")
+    print(f"[STARTUP] projection source: {inspect.getsourcefile(projection)}")
+    print(f"[STARTUP] projection first line: {projection.__code__.co_firstlineno}")
+
+    device = "cpu"
+    dtype = torch.float32
+
+    if FRESH_START:
+        print("\n[SETUP] FRESH_START=True -> deleting latest checkpoints (if present).")
+        for p in [THETA_LATEST_PATH, PV_LATEST_PATH]:
+            if os.path.exists(p):
+                os.remove(p)
+                print(f"  deleted {p}")
+
+    # ManufacturingLoss
+    asset_dir = "/workspaces/lpbf_project/lpbf_to/surrogates/meltpool_v1"
+    tile_shape = (2, 2, 2)
+    K = tile_shape[0] * tile_shape[1] * tile_shape[2]
+
+    mfg = ManufacturingLoss(
+        asset_dir=asset_dir,
+        tile_shape=tile_shape,
+        bounds_by_material={"IN718": Bounds(P_min=100, P_max=600, v_min=400, v_max=1100)},
+        tv_weight=0.05,
+        rho_power=RHO_POWER,
+        ar_weight=AR_W,
+        ar_max=AR_MAX,
+        ar_min=AR_MIN,
+    )
+    print(f"\n[MFG CFG] rho_power={mfg.rho_power} | ar_weight={mfg.ar_weight} | ar_max={mfg.ar_max}")
+
+    # Tile indices
+    tile_indices = torch.empty((NX, NY, NZ), dtype=torch.int64, device=device)
+    for ix in range(NX):
+        tx = 0 if ix < NX // 2 else 1
+        for iy in range(NY):
+            ty = 0 if iy < NY // 2 else 1
+            for iz in range(NZ):
+                tz = 0 if iz < NZ // 2 else 1
+                tile_indices[ix, iy, iz] = tx + 2 * ty + 4 * tz
+
+    # PV params
+    P_raw = torch.nn.Parameter(torch.zeros(K, dtype=dtype, device=device))
+    v_raw = torch.nn.Parameter(torch.zeros(K, dtype=dtype, device=device))
+
+    pv_saved = try_load_tensor(PV_LATEST_PATH)
+    if pv_saved is not None and pv_saved.numel() == 2 * K:
+        with torch.no_grad():
+            P_raw.copy_(pv_saved[:K].to(dtype=dtype, device=device))
+            v_raw.copy_(pv_saved[K:].to(dtype=dtype, device=device))
+        print("[LOAD] restored P_raw/v_raw from pv_latest.pt")
+
+    pv_opt = torch.optim.Adam([P_raw, v_raw], lr=PV_LR)
+
+    # Problem setup
+    domain = _load_domain_contract()
+    problem, NX, NY, NZ = _build_problem_from_domain(domain, device=device, dtype=dtype)
+    if domain is None:
+        print(f"[DOMAIN] using built-in fallback benchmark grid=({NX},{NY},{NZ})")
+    else:
+        print(f"[DOMAIN] loaded contract from {_domain_json_path()} grid=({NX},{NY},{NZ})")
+
+    # Init theta: dense start (carve-down)
+    theta0 = try_load_tensor(THETA_LATEST_PATH)
+    if theta0 is None:
+        theta0 = torch.full((1, *problem.shape), 0.50, device=device, dtype=dtype)
+        noise = (torch.rand_like(theta0) - 0.5) * 0.02
+        theta0 = torch.clamp(theta0 + noise, 0.01, 0.99)
+        print("\n[INIT] created theta0 (dense start) with noise.")
+    else:
+        theta0 = theta0.to(device=device, dtype=dtype)
+
+    sol = make_solution(problem, theta0)
+
+    # Warmup PV
+    print("\n[WARMUP] optimizing P/v before SIMP stages...")
+    Omega = get_omega_design(problem).to(problem.device)
+    design_mask = (Omega == -1.0)
+
+    theta_w = get_theta(sol).detach().clamp(0.0, 1.0)
+    eta_w, beta_w, _, _, _ = solve_eta_with_beta(theta_w, float(STAGES[0]["beta"]), TARGET_VF, design_mask)
+    rho_fixed = projection(theta_w, beta_w, eta_w).squeeze(0)
+
+    for _ in range(PV_WARMUP_STEPS):
+        pv_opt.zero_grad(set_to_none=True)
+        mout = mfg(
+            rho=rho_fixed,
+            P_raw=P_raw,
+            v_raw=v_raw,
+            tile_indices=tile_indices,
+            material="IN718",
+            h_mm=0.11,
+            t_mm=0.04,
+            d_req_um=D_REQ_UM,
+            d_max_um=float(STAGES[0]["d_max_um"]),
+        )
+        loss_pv = mout["loss_total_mfg"]
+        loss_pv.backward()
+        torch.nn.utils.clip_grad_norm_([P_raw, v_raw], max_norm=10.0)
+        pv_opt.step()
+        with torch.no_grad():
+            P_raw.clamp_(-RAW_CLAMP, RAW_CLAMP)
+            v_raw.clamp_(-RAW_CLAMP, RAW_CLAMP)
+    print("[WARMUP] done.\n")
+
+    # Stages
+    for st in STAGES:
+        label = str(st["label"])
+        beta = float(st["beta"])
+        d_max_um = float(st["d_max_um"])
+        w_mfg = float(st["w_mfg"])
+        w_bin = float(st["w_bin"])
+        iters = int(st["iters"])
+
+        print(f"\n[STAGE] {label} | beta={beta:.2f} | d_max_um={d_max_um}")
+
+        log_every = 1 if label == "SHAPE" else 5
+
+        crit = HardConstrainedJointCriterion(
+            problem=problem,
+            mfg_loss=mfg,
+            tile_indices=tile_indices,
+            P_raw=P_raw,
+            v_raw=v_raw,
+            beta=beta,
+            d_max_um=d_max_um,
+            w_mfg=w_mfg,
+            w_bin=w_bin,
+            log_every=log_every,
+        )
+
+        simp = SIMP(
+            criterion=crit,
+            n_iterations=iters,
+            verbose=True,
+            return_intermediate_solutions=False,
+        )
+
+        # IMPORTANT: must be False so gradients + hooks can fire
+        sol_out = simp([sol], eval_mode=False)
+        sol = sol_out[0] if isinstance(sol_out, list) else sol_out
+
+        # PV update after stage using stage-consistent physical rho
+        theta_s = get_theta(sol).detach().clamp(0.0, 1.0)
+        eta_s, beta_s, _, _, _ = solve_eta_with_beta(theta_s, beta, TARGET_VF, design_mask)
+        rho_stage = projection(theta_s, beta_s, eta_s).squeeze(0)
+
+        for _ in range(PV_STEPS_PER_STAGE):
+            pv_opt.zero_grad(set_to_none=True)
+            mout = mfg(
+                rho=rho_stage,
+                P_raw=P_raw,
+                v_raw=v_raw,
+                tile_indices=tile_indices,
+                material="IN718",
+                h_mm=0.11,
+                t_mm=0.04,
+                d_req_um=D_REQ_UM,
+                d_max_um=d_max_um,
+            )
+            loss_pv = mout["loss_total_mfg"]
+            loss_pv.backward()
+            torch.nn.utils.clip_grad_norm_([P_raw, v_raw], max_norm=10.0)
+            pv_opt.step()
+            with torch.no_grad():
+                P_raw.clamp_(-RAW_CLAMP, RAW_CLAMP)
+                v_raw.clamp_(-RAW_CLAMP, RAW_CLAMP)
+
+        # Save
+        save_tensor(get_theta(sol), f"{CKPT_BASE}_{label}.pt")
+        save_tensor(get_theta(sol), THETA_LATEST_PATH)
+        pv_pack = torch.cat([P_raw.detach().cpu(), v_raw.detach().cpu()], dim=0)
+        save_tensor(pv_pack, PV_LATEST_PATH)
+
+    print("\n[DONE] Completed all stages successfully.")
+    gc.collect()
+
+
+if __name__ == "__main__":
+    main()

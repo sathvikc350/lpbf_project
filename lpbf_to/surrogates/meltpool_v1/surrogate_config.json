@@ -1,0 +1,146 @@
+{
+  "name": "meltpool_surrogate_v1",
+  "weights_file": "weights.pt",
+  "scaler_file": "scaler.joblib",
+  "numeric_feature_cols": [
+    "P_W",
+    "v_mm_per_s",
+    "LED_J_per_mm",
+    "VED_J_per_mm3",
+    "h_mm",
+    "t_mm"
+  ],
+  "target_cols": [
+    "melt_width_um",
+    "melt_depth_um"
+  ],
+  "output_order": [
+    "width_um",
+    "depth_um"
+  ],
+  "material_to_id": {
+    "316L": 0,
+    "IN718": 1,
+    "Ti64": 2
+  },
+  "num_materials": 3,
+  "emb_dim": 3,
+  "hidden_sizes": [
+    64,
+    64
+  ],
+  "dropout": 0.1,
+  "validity_window_global": {
+    "P_W": [
+      100.0,
+      600.0
+    ],
+    "v_mm_per_s": [
+      400.0,
+      1700.0
+    ],
+    "LED_J_per_mm": [
+      0.0909090909090909,
+      1.5
+    ],
+    "VED_J_per_mm3": [
+      20.66115702479339,
+      340.90909090909093
+    ],
+    "h_mm": [
+      0.1,
+      0.11
+    ],
+    "t_mm": [
+      0.03,
+      0.04
+    ]
+  },
+  "validity_window_by_material": {
+    "316L": {
+      "P_W": [
+        100.0,
+        600.0
+      ],
+      "v_mm_per_s": [
+        400.0,
+        1100.0
+      ],
+      "h_mm": [
+        0.11
+      ],
+      "t_mm": [
+        0.04
+      ]
+    },
+    "IN718": {
+      "P_W": [
+        100.0,
+        600.0
+      ],
+      "v_mm_per_s": [
+        400.0,
+        1100.0
+      ],
+      "h_mm": [
+        0.11
+      ],
+      "t_mm": [
+        0.04
+      ]
+    },
+    "Ti64": {
+      "P_W": [
+        200.0,
+        370.0
+      ],
+      "v_mm_per_s": [
+        1300.0,
+        1700.0
+      ],
+      "h_mm": [
+        0.1
+      ],
+      "t_mm": [
+        0.03
+      ]
+    }
+  },
+  "scaler_mean": [
+    313.3374536464771,
+    1198.1458590852906,
+    0.3212726961172705,
+    86.69965246048187,
+    0.10381953028430106,
+    0.033819530284301604
+  ],
+  "scaler_scale": [
+    111.78067034813733,
+    423.3339609664868,
+    0.24810671766892223,
+    52.137659399553385,
+    0.0048586511760280796,
+    0.0048586511760280865
+  ],
+  "units": {
+    "P_W": "W",
+    "v_mm_per_s": "mm/s",
+    "h_mm": "mm",
+    "t_mm": "mm",
+    "LED_J_per_mm": "J/mm",
+    "VED_J_per_mm3": "J/mm^3",
+    "outputs": "um"
+  },
+  "numeric_features": [
+    "P_W",
+    "v_mm_per_s",
+    "LED_J_per_mm",
+    "VED_J_per_mm3",
+    "h_mm",
+    "t_mm"
+  ],
+  "outputs": [
+    "width_um",
+    "depth_um"
+  ]
+}

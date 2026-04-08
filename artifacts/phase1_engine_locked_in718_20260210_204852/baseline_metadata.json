@@ -1,0 +1,132 @@
+{
+  "git_commit": "UNKNOWN",
+  "code_sha256": {
+    "lpbf_to/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "lpbf_to/criteria/__init__.py": "27a98aeae47fad73ebf8525c2178b80143372c168716aee885589009e919d9a1",
+    "lpbf_to/criteria/manufacturing_criterion.py": "3fe851b7b133cbbb41e9a992f65f84c009ba2fa447497ef1810ddf6364b0e975",
+    "lpbf_to/losses/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "lpbf_to/losses/manufacturing_loss.py": "c097d92aed27fab44317c96fae170a52ffeb600b29a04a163c53881180d4e772",
+    "lpbf_to/losses/min_feature.py": "81bea8962da7590a1ed92b72ca91e213cbebd43a4b9fc8f8e2804992cfdf439f",
+    "lpbf_to/losses/overhang.py": "520d14c028a946c95e40953afc9ba14e111b5f6fe0c3a792ba4162c9a6d1c091",
+    "lpbf_to/losses/process_risk.py": "d6e50fa2464f89a1c0957d86210f24186e0f6d51f0091f18d4a7959100d09667",
+    "lpbf_to/surrogates/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "lpbf_to/surrogates/meltpool_v1/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "lpbf_to/surrogates/meltpool_v1/inference.py": "0f7e72be455a6ddc9bbc85aae88392a4331f2325e34a1854a55b081dd26e1c21",
+    "lpbf_to/surrogates/mlp.py": "762b24eb5b3d26c72c9583a926becb286f7c914ba990b09a9f34c8d93feedcb2",
+    "scripts/check_mfg_grad_theta.py": "fd160085c207509c8bfef2a82c194e2ffe83266d5c7bffba57879ba81fbea1a7",
+    "scripts/check_mfg_theta_grad.py": "c401475e336a5a1f9168c0b1ca853b1b4f85c3f9faa27e5a89f351c53c88f31b",
+    "scripts/one_scratch.py": "f21cb5e2e893c496768a7379086b84b03c23a34f7a413c899dcf422a6fb4e18c",
+    "scripts/patch_dl4to_pyvista_backend.py": "b9ecb247743f222733ab4e790d3997c60139de8057fb1ea9fb6fe71a84bf3590",
+    "scripts/phase1_baseline_bundle.py": "862fb96e05ef1dc6ef9a31ae81aeacebef79191b5f7b896b04d84cfa4648ba81",
+    "scripts/scratch_plot.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "scripts/smoke_imports.py": "68f7cc063ddcbc923b3c329e61953b55dbcf0aedf62473aa570bd9fbff742650",
+    "scripts/smoke_joint_opt.py": "10d77f50a3e8af894b87d6fb820e1b033c4b93a42ed33dd957d86ce6742f9595",
+    "scripts/smoke_joint_opt_fast.py": "6ab01add51b461f585c67c7d3bdf64712d9c9ec8dc4e0ceedc0f8d01620c12ff",
+    "scripts/smoke_riskloss.py": "5ff07ed5efa3d040b6c4d6c077105d4555313a4ce8ae18ab58b1969c9eca6412",
+    "scripts/synth_train.py": "de43d03f544f1e9fc53ff54078bc2e0d5a0f0a40e956ccc2560393743d565350",
+    "scripts/test_manufacturingloss_smoke.py": "7fd61fd09b1fed37c2ad3a4b9c69a35c25e91faab09cc92231275181d0abf3d5",
+    "scripts/verify_theta.py": "940646b29d7cb462cfe481d043cf3f125ca63a05e4d2b4bd92403f1ede42a6e7"
+  },
+  "engine_sha256": "9f5e72f637757cbcf9c18a0db7433a65fbe38cade38f3d9545971cacfd43ce39",
+  "num_files_hashed": 25,
+  "env": {
+    "python": "3.10.19 (main, Oct  9 2025, 22:45:33) [GCC 14.2.0]",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.41",
+    "torch": "2.5.1+cpu",
+    "numpy": "1.26.4",
+    "dl4to": "0.0.1",
+    "lpbf_to": "UNKNOWN"
+  },
+  "knob_monotonicity": {
+    "P": {
+      "xs": [
+        -6,
+        -3,
+        0,
+        3,
+        6
+      ],
+      "ys": [
+        100.00306701660156,
+        101.2363052368164,
+        350.0,
+        598.763671875,
+        599.9969482421875
+      ],
+      "is_strictly_increasing": true,
+      "in_bounds": true,
+      "y_min": 100.00306701660156,
+      "y_max": 599.9969482421875
+    },
+    "v": {
+      "xs": [
+        -6,
+        -3,
+        0,
+        3,
+        6
+      ],
+      "ys": [
+        400.0043029785156,
+        401.7308349609375,
+        750.0,
+        1098.2691650390625,
+        1099.9957275390625
+      ],
+      "is_strictly_increasing": true,
+      "in_bounds": true,
+      "y_min": 400.0043029785156,
+      "y_max": 1099.9957275390625
+    }
+  },
+  "material": "IN718",
+  "seed": 123,
+  "target_vf": 0.25,
+  "theta_raw_min": 0.2045888602733612,
+  "theta_raw_max": 1.0,
+  "pv_numel": 16,
+  "K": 8,
+  "P_bounds_W": [
+    100.0,
+    600.0
+  ],
+  "v_bounds_mms": [
+    400.0,
+    1100.0
+  ],
+  "runtime_s": 2.701627731323242,
+  "theta_phys_stage_summary": {
+    "beta_req": 12.0,
+    "beta_eff": 12.0,
+    "eta": 0.5576907098293613,
+    "feasible": true,
+    "vf_lo": 0.9975274801254272,
+    "vf_hi": 6.765250873286277e-05,
+    "vf_raw": 0.41087815165519714,
+    "vf_phys": 0.25,
+    "theta_phys_min": 0.00020716135622933507,
+    "theta_phys_max": 1.0,
+    "frac_lt_005": 0.5497731566429138,
+    "frac_gt_095": 0.004158266354352236
+  },
+  "theta_phys_bin_summary": {
+    "beta_req": 64.0,
+    "beta_eff": 64.0,
+    "eta": 0.5662628114221164,
+    "feasible": true,
+    "vf_lo": 1.0,
+    "vf_hi": 0.0,
+    "vf_raw": 0.41087815165519714,
+    "vf_phys": 0.2500000298023224,
+    "theta_phys_min": 0.0,
+    "theta_phys_max": 1.0,
+    "frac_lt_005": 0.7047001123428345,
+    "frac_gt_095": 0.19978578388690948
+  },
+  "vf_trace_len": 55,
+  "orth_trace_len": 72,
+  "orth_max_abs": 3.259629011154175e-09,
+  "saturation_warnings": [],
+  "log_path": "/workspaces/lpbf_project/artifacts/phase1_baseline_in718/run.log",
+  "notes": "Phase 1 Step 1 baseline bundle (raw + phys + pv maps + log + visuals + env + repo-wide code fingerprints + monotonicity + orth assert)."
+}

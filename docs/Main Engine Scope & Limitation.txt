@@ -1,0 +1,87 @@
+# LPBF Digital Twin Engine Contract scope & limitations
+# Not for final submission thing can change
+
+## 1. Project Mission (Frozen)
+The goal of this project is to build a production-grade LPBF Digital Twin
+that co-optimizes:
+- Structural topology (density field θ)
+- Laser process parameters (Power P, Speed v)
+
+The final design must be:
+- Exactly 25% volume fraction
+- Structurally stiff
+- Physically printable under LPBF constraints
+- Explainable to non-expert users
+
+This project explicitly prioritizes physical validity over theoretical stiffness.
+
+---
+
+## 2. What the Engine DOES
+The engine:
+- Enforces volume fraction via hard constraints (manifold gradient projection)
+- Uses θ_phys as the single source of truth for physics
+- Co-optimizes geometry and laser parameters (P, v)
+- Uses surrogate models for melt-pool physics
+- Suppresses defects indirectly via physics proxies:
+  - Aspect Ratio penalty (spatter / keyhole proxy)
+  - Melt depth limits (gas flow / recoater safety proxy)
+- Supports material-specific behavior (e.g. IN718 vs Ti-64)
+
+---
+
+## 3. What the Engine DOES NOT DO (Hard Limits)
+The engine does NOT:
+- Solve CFD or gas flow equations
+- Solve thermo-mechanical residual stress
+- Guarantee zero supports
+- Simulate recoater dynamics explicitly
+- Predict absolute failure probabilities
+
+All spatter, gas, and thermal effects are handled via calibrated proxies.
+
+---
+
+## 4. The Three Physics Walls (Explicit)
+### 4.1 Geometric Wall
+- Overhangs below ~45° are risky
+- Minimum feature size limited by melt pool width
+- Thin unsupported struts may require supports
+
+### 4.2 Thermal Wall
+- Excessive local mass causes heat accumulation
+- Heat accumulation may cause warping or recoater collision
+- Dense clusters are penalized indirectly
+
+### 4.3 Process Window Wall
+- Low P / high v → Lack of Fusion
+- High P / low v → Keyhole + Spatter
+- Optimization must stay in conduction regime
+
+---
+
+## 5. Backend-First Policy
+- No UI work begins until backend is locked
+- Backend stability > visualization
+- Numerical determinism is mandatory
+- All physics knobs must be traceable and logged
+- All runs must use a fixed global manual seed unless explicitly randomized for sensitivity testing.
+---
+
+## 6. Execution Rules
+- Work proceeds phase by phase
+- No phase is skipped
+- Each phase has exit criteria
+- Changes after engine lock require explicit agreement
+
+---
+
+## 7. Definition of “Engine Locked”
+The engine is considered locked only when:
+- Volume drift is zero (±1e-5)
+- Gradient projection is verified
+- θ_phys is binary at high β
+- Material swap changes P/v behavior
+- Physics knobs behave monotonically
+
+Signed-off before UI work begins.

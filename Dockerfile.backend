@@ -1,0 +1,51 @@
+FROM python:3.10-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PYVISTA_OFF_SCREEN=true \
+    PYVISTA_EGL=true
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libgl1 \
+    libgl1-mesa-dri \
+    xvfb \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python -m pip install --upgrade pip setuptools wheel
+
+RUN python -m pip install --extra-index-url https://download.pytorch.org/whl/cpu \
+    torch==2.5.1 torchvision==0.20.1
+
+RUN python -m pip install \
+    vtk==9.2.6 \
+    pyvista==0.43.9 \
+    pyvistaqt==0.11.1 \
+    matplotlib \
+    tqdm \
+    einops \
+    loguru \
+    pre-commit \
+    jupyter \
+    ipykernel \
+    "pandas>=2.2" \
+    "pyarrow>=14" \
+    "numpy>=1.26" \
+    "scipy>=1.10" \
+    fastapi \
+    "uvicorn[standard]" \
+    python-multipart
+
+COPY . /app
+
+RUN python -m pip install -e .
+
+RUN python /app/scripts/patch_dl4to_pyvista_backend.py || true
+
+EXPOSE 8000
+
+CMD ["python", "-m", "uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]

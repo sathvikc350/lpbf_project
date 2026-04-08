@@ -1,0 +1,14 @@
+# PHASE 4 — ENGINE FREEZE (GREEN-LIGHT)
+
+Freeze directory:
+- /workspaces/lpbf_project/artifacts/phase4_engine_freeze_locked_in718_20260216_205826
+
+IDs:
+- LOCK_ID_SHA256: 0f7ac065e0e5f4c2897ed6c1f92608330075c68d19223e8c5f05408e181e9f77
+- CORE_FREEZE_ID_SHA256: b20bd059f6079cde4e1e0174791601156624b152d614019e79f030ccce9bb7a9
+
+Frozen components:
+- Phase 1 Engine: /workspaces/lpbf_project/artifacts/phase4_engine_freeze_locked_in718_20260216_205826/phase1_engine_locked_in718_20260210_204852
+- Phase 2 Diagnostics: /workspaces/lpbf_project/artifacts/phase4_engine_freeze_locked_in718_20260216_205826/phase2_diag_locked_in718_20260211_204203
+- Phase 3 Registry: /workspaces/lpbf_project/artifacts/phase4_engine_freeze_locked_in718_20260216_205826/phase3_registry_locked_in718_20260212_212457
+- Phase 3 Scoreboard (locked): /workspaces/lpbf_project/artifacts/phase4_engine_freeze_locked_in718_20260216_205826/phase3_scoreboard_locked_in718_20260216_201333

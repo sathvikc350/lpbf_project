@@ -1,0 +1,55 @@
+{
+  "core_files_sha256": {
+    "phase1_engine_locked_in718_20260210_204852/P_map_W.pt": "27a7bf0898b70b8906b8f2380e06925ffaca4dbc9bff0b7e836e3fdac2669b2f",
+    "phase1_engine_locked_in718_20260210_204852/P_raw.pt": "1aa36bcb34d00f9197ecd9e78152118c8d966171b8b6280439916b4ca3d9920e",
+    "phase1_engine_locked_in718_20260210_204852/P_tile_W.pt": "41b650eaf7023e8f6f9c841fd868c6e23f751741614462253ef8b5f523c54a60",
+    "phase1_engine_locked_in718_20260210_204852/baseline_metadata.json": "11c1845ffcf96359948462613e4b711c264c9081b0b389f4e89caae9345a5bc7",
+    "phase1_engine_locked_in718_20260210_204852/theta_phys_beta12.pt": "be185504fcec0560cdd47b7319b0bd5e9218e67ccd1178d8035ae5e67db48ee1",
+    "phase1_engine_locked_in718_20260210_204852/theta_phys_beta64.pt": "57e79e536a67d427f36ba8740fde693f5d310dc89e13bdb1c74e848637dbe03f",
+    "phase1_engine_locked_in718_20260210_204852/theta_raw.pt": "ab8cdfa758664779faa52b422835e5f767a190c6d2b1b38adc3b8e21a05e9ee4",
+    "phase1_engine_locked_in718_20260210_204852/v_map_mms.pt": "fa2968b349ece90a391669b129b68e8e4c6d0488421eafdbd483b4ebd13a1674",
+    "phase1_engine_locked_in718_20260210_204852/v_raw.pt": "36806c1d1c8873ce10b718fc7098d35987ea118c2167290481e7f34e3ce847de",
+    "phase1_engine_locked_in718_20260210_204852/v_tile_mms.pt": "c53a48f7b07fe7037b34f3994b6e532934514b3d02f307dbe830efc865175580",
+    "phase2_diag_locked_in718_20260211_204203/islands_mask.pt": "cef0d5aaa8175a51af933a86b0215a8e57e8466bc75c785ca26df46804ab37b5",
+    "phase2_diag_locked_in718_20260211_204203/manifest.json": "7d554d95b4d8e2f363807e832dce902913aa6a7a3aded2889ca11a49558670c4",
+    "phase2_diag_locked_in718_20260211_204203/minfeature_mask.pt": "77813b86f00bc173316d6408d64e252c535f0fda11f94b47c56cd00d822be84e",
+    "phase2_diag_locked_in718_20260211_204203/overhang_mask.pt": "661626ddae36b806a802535f42ed427088b1dde3e7605def21ff3ab05445d11b",
+    "phase2_diag_locked_in718_20260211_204203/recoater_risk_mask.pt": "a9b54a4443e9f38815768ebc9b2253c8c9896f122a175ddd4bde8e26068d3917",
+    "phase2_diag_locked_in718_20260211_204203/thermal_cluster_map.pt": "e4822a5b6adf75524af5c366ec92c51c2c40210ccba673f36a3c5ba86121c549",
+    "phase2_diag_locked_in718_20260211_204203/thermal_cluster_mask.pt": "09da2f4bfca3425eac95b91b0b13e1464846c5575be4ac7df6a055bf8bc006db",
+    "phase2_diag_locked_in718_20260211_204203/ved_map_J_per_mm3.pt": "a19bf6c5887a5a7941d4977c732e37c808630aa5be838bac9450453735655a67",
+    "phase3_registry_locked_in718_20260212_212457/material_registry.json": "e7b1138186bf5c0c37d1d91bb680161ba76680a215fbf849ece2b3e1a6c56ced",
+    "phase3_scoreboard_locked_in718_20260216_201333/scoreboard.json": "59b82bcde96b9eec372e5297a64388333bd8e0659c79c08f822a4d9b258367d4",
+    "surrogate_bundle/meltpool_v1/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "surrogate_bundle/meltpool_v1/inference.py": "0f7e72be455a6ddc9bbc85aae88392a4331f2325e34a1854a55b081dd26e1c21",
+    "surrogate_bundle/meltpool_v1/scaler.joblib": "a567656800848dd8784c943df823d7ca49bc9744e078f3074ec5ce79ede5818c",
+    "surrogate_bundle/meltpool_v1/surrogate_config.json": "31f5840199c57e61bc82072125c329b5c389b9e37f43aa44cd68639335d8b6f1",
+    "surrogate_bundle/meltpool_v1/weights.pt": "3d895a6886f490e02453c483b1f584e59ed21deeac1e4f7f29e4660203fdae19"
+  },
+  "core_freeze_id_sha256": "b20bd059f6079cde4e1e0174791601156624b152d614019e79f030ccce9bb7a9",
+  "excluded_basenames": [
+    "PHASE4_CORE_FREEZE_ID.txt",
+    "PHASE4_CORE_FREEZE_MANIFEST.json",
+    "PHASE4_FREEZE_MANIFEST.json",
+    "PHASE4_LOCK_ID.txt"
+  ],
+  "excluded_suffixes": [
+    ".png",
+    ".log"
+  ],
+  "json_drop_keys": [
+    "baseline_dir",
+    "bundle_dir",
+    "created_at",
+    "created_unix_s",
+    "engine_dir",
+    "out_dir",
+    "path",
+    "paths",
+    "registry",
+    "runtime_s",
+    "time",
+    "timestamp"
+  ],
+  "num_core_files": 25
+}

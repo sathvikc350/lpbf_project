@@ -1,0 +1,1677 @@
+from __future__ import annotations
+
+import json
+import os
+import re
+import sqlite3
+import threading
+import time
+import traceback
+import uuid
+import mimetypes
+import hashlib
+import math
+import shutil
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import numpy as np
+import torch
+from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi.responses import FileResponse
+from pydantic import BaseModel, Field
+
+from backend.app.runs_store import write_checkpoint
+import subprocess
+
+# --- Repo paths ---
+REPO = Path("/workspaces/lpbf_project")
+ARTIFACTS = REPO / "artifacts"
+RUNS_ROOT = ARTIFACTS / "runs"
+DB_PATH = ARTIFACTS / "runs.db"
+
+# --- Phase-4 frozen bundle (source of truth) ---
+DEFAULT_PH4_DIR = Path(
+    "/workspaces/lpbf_project/artifacts/phase4_engine_freeze_locked_in718_20260216_205826"
+)
+PH4_DIR = Path(os.environ.get("PH4_DIR", str(DEFAULT_PH4_DIR)))
+
+router = APIRouter(prefix="/runs", tags=["runs"])
+
+
+def _run_real_optimizer_once(log_path: Path, run_dir: Path) -> Path:
+    """
+    Runs the real optimizer as a separate subprocess and returns the produced
+    theta_latest.pt path after the subprocess exits successfully.
+    """
+    cmd = ["python", "/workspaces/lpbf_project/scripts/smoke_joint_opt_fast.py"]
+    domain_json = run_dir / "inputs" / "domain.json"
+    env = os.environ.copy()
+    env["LPBF_DOMAIN_JSON"] = str(domain_json)
+
+    with log_path.open("a") as f:
+        f.write(f"[RUN_ENGINE] spawning subprocess: {' '.join(cmd)}\n")
+        f.write(f"[RUN_ENGINE] LPBF_DOMAIN_JSON={domain_json}\n")
+        f.flush()
+
+        proc = subprocess.Popen(
+            cmd,
+            cwd="/workspaces/lpbf_project",
+            stdout=f,
+            stderr=subprocess.STDOUT,
+            text=True,
+            env=env,
+        )
+        rc = proc.wait()
+
+        f.write(f"[RUN_ENGINE_EXIT] returncode={rc}\n")
+        f.flush()
+
+    if rc != 0:
+        raise RuntimeError(f"Real optimizer subprocess failed with return code {rc}")
+
+    theta_latest = Path("/workspaces/lpbf_project/scripts/theta_latest.pt")
+    if not theta_latest.exists():
+        raise RuntimeError(f"Real optimizer did not produce theta_latest.pt at {theta_latest}")
+
+    return theta_latest
+
+
+
+# -----------------------------
+# DB helpers
+# -----------------------------
+def _connect() -> sqlite3.Connection:
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    con = sqlite3.connect(str(DB_PATH), timeout=5.0)
+    con.row_factory = sqlite3.Row
+    return con
+
+
+def _read_text_or_none(p: Path) -> Optional[str]:
+    try:
+        return p.read_text().strip()
+    except Exception:
+        return None
+
+
+def _ph4_ids() -> Dict[str, str]:
+    lock_id = _read_text_or_none(PH4_DIR / "PHASE4_LOCK_ID.txt")
+    core_id = _read_text_or_none(PH4_DIR / "PHASE4_CORE_FREEZE_ID.txt")
+    if not lock_id or not core_id:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "PH4 IDs missing. Expected PHASE4_LOCK_ID.txt and "
+                f"PHASE4_CORE_FREEZE_ID.txt under {PH4_DIR}"
+            ),
+        )
+    return {"lock_id": lock_id, "core_freeze_id": core_id}
+
+
+def _ensure_run_dirs(run_dir: Path) -> None:
+    subdirs = ["inputs", "checkpoints", "exports", "reports", "logs"]
+    run_dir.mkdir(parents=True, exist_ok=False)
+    for sd in subdirs:
+        (run_dir / sd).mkdir(parents=True, exist_ok=False)
+
+
+def _write_json(path: Path, data: Any) -> None:
+    path.write_text(json.dumps(data, indent=2))
+
+
+def _get_run_row(con: sqlite3.Connection, run_id: str) -> sqlite3.Row:
+    row = con.execute(
+        """
+        SELECT run_id, name, status, created_unix_s, updated_unix_s,
+               material, voxel_size_mm, probe_mode,
+               ph4_dir, lock_id, core_freeze_id, run_dir,
+               last_iter, total_iters, warnings_json, error_text,
+               control_state, paused_at_unix_s, stop_reason
+        FROM runs
+        WHERE run_id=?
+        """,
+        (run_id,),
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    return row
+
+
+def _get_run_dir(con: sqlite3.Connection, run_id: str) -> Path:
+    row = con.execute("SELECT run_dir FROM runs WHERE run_id=?", (run_id,)).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Run not found")
+    return Path(row["run_dir"])
+
+
+def _touch_updated(con: sqlite3.Connection, run_id: str) -> None:
+    now = time.time()
+    con.execute("UPDATE runs SET updated_unix_s=? WHERE run_id=?", (now, run_id))
+
+
+def _update_run_status(run_id: str, status: str, *, error_text: Optional[str] = None) -> None:
+    con = _connect()
+    try:
+        now = time.time()
+        con.execute(
+            "UPDATE runs SET status=?, updated_unix_s=?, error_text=? WHERE run_id=?",
+            (status, now, error_text, run_id),
+        )
+        con.commit()
+    finally:
+        con.close()
+
+
+def _update_run_progress(run_id: str, last_iter: int) -> None:
+    con = _connect()
+    try:
+        now = time.time()
+        con.execute(
+            "UPDATE runs SET last_iter=?, updated_unix_s=? WHERE run_id=?",
+            (int(last_iter), now, run_id),
+        )
+        con.commit()
+    finally:
+        con.close()
+
+
+def _get_status_control(run_id: str) -> Dict[str, Any]:
+    con = _connect()
+    try:
+        row = con.execute(
+            "SELECT status, control_state, stop_reason FROM runs WHERE run_id=?",
+            (run_id,),
+        ).fetchone()
+        if row is None:
+            return {"status": None, "control_state": None, "stop_reason": None}
+        return {
+            "status": row["status"],
+            "control_state": row["control_state"],
+            "stop_reason": row["stop_reason"],
+        }
+    finally:
+        con.close()
+
+
+def _set_control_state(
+    run_id: str,
+    state: str,
+    *,
+    reason: Optional[str] = None,
+    overwrite_reason: bool = False,
+) -> None:
+    state_u = (state or "RUNNING").strip().upper()
+    now = time.time()
+    con = _connect()
+    try:
+        if overwrite_reason:
+            con.execute(
+                """
+                UPDATE runs
+                SET control_state=?, updated_unix_s=?, stop_reason=?
+                WHERE run_id=?
+                """,
+                (state_u, now, reason, run_id),
+            )
+        else:
+            con.execute(
+                """
+                UPDATE runs
+                SET control_state=?, updated_unix_s=?, stop_reason=COALESCE(?, stop_reason)
+                WHERE run_id=?
+                """,
+                (state_u, now, reason, run_id),
+            )
+        con.commit()
+    finally:
+        con.close()
+
+
+def _finalize_run_terminal(
+    run_id: str,
+    terminal_status: str,
+    *,
+    reason: Optional[str] = None,
+    error_text: Optional[str] = None,
+) -> None:
+    terminal_status = (terminal_status or "").strip().upper()
+    if terminal_status not in ("DONE", "FAILED", "STOPPED"):
+        raise ValueError(f"terminal_status must be DONE/FAILED/STOPPED, got: {terminal_status}")
+
+    now = time.time()
+    con = _connect()
+    try:
+        con.execute(
+            """
+            UPDATE runs
+            SET status=?,
+                control_state='IDLE',
+                paused_at_unix_s=NULL,
+                updated_unix_s=?,
+                stop_reason=COALESCE(?, stop_reason),
+                error_text=COALESCE(?, error_text)
+            WHERE run_id=?
+            """,
+            (terminal_status, now, reason, error_text, run_id),
+        )
+        con.commit()
+    finally:
+        con.close()
+
+
+def _clear_start_leftovers(run_id: str) -> None:
+    now = time.time()
+    con = _connect()
+    try:
+        con.execute(
+            """
+            UPDATE runs
+            SET paused_at_unix_s=NULL,
+                stop_reason=NULL,
+                error_text=NULL,
+                updated_unix_s=?,
+                control_state='RUNNING'
+            WHERE run_id=?
+            """,
+            (now, run_id),
+        )
+        con.commit()
+    finally:
+        con.close()
+
+
+# -----------------------------
+# Input helpers
+# -----------------------------
+def _read_required_inputs(run_dir: Path) -> Dict[str, Any]:
+    inputs_dir = run_dir / "inputs"
+    domain_path = inputs_dir / "domain.json"
+    process_path = inputs_dir / "process.json"
+    opt_path = inputs_dir / "opt_config.json"
+
+    missing = [p.name for p in [domain_path, process_path, opt_path] if not p.exists()]
+    if missing:
+        raise RuntimeError(f"Missing required inputs: {missing}")
+
+    domain = json.loads(domain_path.read_text())
+    process = json.loads(process_path.read_text())
+    opt = json.loads(opt_path.read_text())
+    return {"domain": domain, "process": process, "opt": opt}
+
+
+def _safe_torch_load_tensor(path: Path) -> torch.Tensor:
+    try:
+        obj = torch.load(str(path), map_location="cpu", weights_only=True)  # type: ignore[arg-type]
+    except TypeError:
+        obj = torch.load(str(path), map_location="cpu")
+    if not isinstance(obj, torch.Tensor):
+        raise RuntimeError(f"{path} did not contain a torch.Tensor")
+    return obj.float()
+
+
+def _get_voxel_size_mm_from_run(run_dir: Path) -> float:
+    try:
+        p = run_dir / "inputs" / "run_meta.json"
+        if p.exists():
+            meta = json.loads(p.read_text())
+            v = meta.get("voxel_size_mm")
+            if isinstance(v, (int, float)) and v > 0:
+                return float(v)
+    except Exception:
+        pass
+    return 0.5
+
+
+def _theta_to_numpy_grid(theta: torch.Tensor) -> np.ndarray:
+    t = theta
+    if t.ndim == 4 and t.shape[0] == 1:
+        t = t[0]
+    if t.ndim != 3:
+        raise RuntimeError(f"Expected theta to be 3D (or 1x3D). Got shape {tuple(theta.shape)}")
+    return t.detach().cpu().float().numpy()
+
+
+def _sample_grid_to_surface_points(
+    grid: np.ndarray,
+    pts_xyz_mm: np.ndarray,
+    voxel_size_mm: float,
+) -> np.ndarray:
+    if voxel_size_mm <= 0:
+        raise RuntimeError(f"voxel_size_mm must be > 0, got {voxel_size_mm}")
+
+    ijk = np.rint(pts_xyz_mm / float(voxel_size_mm)).astype(np.int64)
+    ijk[:, 0] = np.clip(ijk[:, 0], 0, grid.shape[0] - 1)
+    ijk[:, 1] = np.clip(ijk[:, 1], 0, grid.shape[1] - 1)
+    ijk[:, 2] = np.clip(ijk[:, 2], 0, grid.shape[2] - 1)
+    return grid[ijk[:, 0], ijk[:, 1], ijk[:, 2]]
+
+
+def _make_surface_from_voxels(phi: np.ndarray, *, level: float, voxel_size_mm: float):
+    import pyvista as pv
+
+    try:
+        from skimage import measure
+
+        verts, faces, _normals, _values = measure.marching_cubes(
+            phi,
+            level=float(level),
+            spacing=(float(voxel_size_mm), float(voxel_size_mm), float(voxel_size_mm)),
+        )
+        faces_pv = np.hstack(
+            [np.full((faces.shape[0], 1), 3, dtype=np.int64), faces.astype(np.int64)]
+        ).ravel()
+        mesh = pv.PolyData(verts, faces_pv)
+        mesh.compute_normals(point_normals=True, cell_normals=False, inplace=True)
+        return mesh
+    except Exception:
+        grid = pv.ImageData()
+        nx, ny, nz = phi.shape
+        grid.dimensions = (nx, ny, nz)
+        grid.spacing = (float(voxel_size_mm), float(voxel_size_mm), float(voxel_size_mm))
+        grid.origin = (0.0, 0.0, 0.0)
+        grid.point_data["theta"] = phi.astype(np.float32).ravel(order="F")
+
+        mesh = grid.contour(
+            isosurfaces=1,
+            rng=[float(level), float(level)],
+            scalars="theta",
+        )
+        if mesh is None or mesh.n_points == 0:
+            raise RuntimeError(f"No surface extracted. Try lowering iso threshold (level={level}).")
+        mesh.compute_normals(point_normals=True, cell_normals=False, inplace=True)
+        return mesh
+
+
+def _get_process_param(process: Dict[str, Any], *keys: str) -> Optional[float]:
+    candidates: List[Dict[str, Any]] = []
+    if isinstance(process, dict):
+        candidates.append(process)
+        params = process.get("params")
+        if isinstance(params, dict):
+            candidates.append(params)
+
+    for src in candidates:
+        for k in keys:
+            if k in src and src[k] is not None:
+                try:
+                    return float(src[k])
+                except Exception:
+                    pass
+    return None
+
+
+# -----------------------------
+# Watertight STL from volume
+# -----------------------------
+def _theta_tensor_to_watertight_stl_from_volume(
+    theta: torch.Tensor,
+    out_stl: Path,
+    *,
+    voxel_size_mm: float,
+    level: float,
+    cleanup: bool = True,
+) -> None:
+    import trimesh
+
+    arr = _theta_to_numpy_grid(theta)
+    vol = arr > float(level)
+
+    if cleanup:
+        try:
+            from skimage.morphology import remove_small_objects, binary_closing, ball
+
+            vol = binary_closing(vol, ball(1))
+            vol = remove_small_objects(vol, min_size=64)
+        except Exception:
+            pass
+
+    transform = trimesh.transformations.scale_matrix(float(voxel_size_mm))
+    vg = trimesh.voxel.VoxelGrid(vol, transform=transform)
+
+    try:
+        vg = vg.fill()
+    except Exception:
+        try:
+            vg.fill()
+        except Exception:
+            pass
+
+    mesh = vg.marching_cubes
+
+    try:
+        mesh.update_faces(mesh.nondegenerate_faces())
+    except Exception:
+        pass
+    try:
+        mesh.remove_unreferenced_vertices()
+    except Exception:
+        pass
+
+    out_stl.parent.mkdir(parents=True, exist_ok=True)
+    mesh.export(str(out_stl))
+
+
+def _export_physics_manifest_vtp(
+    *,
+    run_dir: Path,
+    it: int,
+    iso_threshold: float,
+    overhang_angle_deg: float = 45.0,
+) -> Path:
+    import pyvista as pv  # noqa: F401
+
+    ckpt_dir = run_dir / "checkpoints"
+    inputs_dir = run_dir / "inputs"
+    out_dir = run_dir / "exports" / "physics"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    theta_path = ckpt_dir / f"theta_phys_iter_{int(it):06d}.pt"
+    if not theta_path.exists():
+        raise RuntimeError(f"Missing checkpoint tensor for VTP export: {theta_path}")
+
+    process_path = inputs_dir / "process.json"
+    process: Dict[str, Any] = json.loads(process_path.read_text()) if process_path.exists() else {}
+
+    voxel_size_mm = _get_voxel_size_mm_from_run(run_dir)
+    theta = _safe_torch_load_tensor(theta_path)
+    theta_np = _theta_to_numpy_grid(theta)
+
+    mesh = _make_surface_from_voxels(
+        theta_np,
+        level=float(iso_threshold),
+        voxel_size_mm=float(voxel_size_mm),
+    )
+    if mesh is None or mesh.n_points == 0:
+        raise RuntimeError(f"Empty mesh produced for iter={it} iso={iso_threshold}")
+
+    pts = np.asarray(mesh.points, dtype=np.float32)
+
+    mesh["theta"] = _sample_grid_to_surface_points(
+        theta_np,
+        pts,
+        float(voxel_size_mm),
+    ).astype(np.float32)
+
+    if "Normals" not in mesh.point_data:
+        mesh.compute_normals(point_normals=True, cell_normals=False, inplace=True)
+
+    normals = np.asarray(mesh.point_data["Normals"], dtype=np.float32)
+    nz = normals[:, 2]
+    crit_cos = float(np.cos(np.deg2rad(float(overhang_angle_deg))))
+    mesh["overhang_mask"] = (nz < crit_cos).astype(np.float32)
+
+    P = _get_process_param(process, "P_W", "power_W", "power")
+    v = _get_process_param(process, "v_mm_per_s", "speed_mm_per_s", "scan_speed_mm_per_s", "speed")
+    h = _get_process_param(process, "h_mm", "hatch_mm", "hatch_spacing_mm")
+    t = _get_process_param(process, "t_mm", "layer_thickness_mm")
+
+    ved = 0.0
+    if P is not None and v is not None and h is not None and t is not None and v > 0 and h > 0 and t > 0:
+        ved = float(P) / (float(v) * float(h) * float(t))
+    mesh["VED_J_per_mm3"] = np.full(mesh.n_points, ved, dtype=np.float32)
+
+    mesh.field_data["iter"] = np.array([int(it)], dtype=np.int32)
+    mesh.field_data["iso_threshold"] = np.array([float(iso_threshold)], dtype=np.float32)
+    mesh.field_data["voxel_size_mm"] = np.array([float(voxel_size_mm)], dtype=np.float32)
+
+    out_path = out_dir / f"physics_manifest_iter_{int(it):06d}.vtp"
+    tmp_path = out_dir / f".physics_manifest_iter_{int(it):06d}.{os.getpid()}.tmp.vtp"
+
+    mesh.save(str(tmp_path))
+    os.replace(tmp_path, out_path)
+    return out_path
+
+
+# -----------------------------
+# Preview STL
+# -----------------------------
+def _theta_tensor_to_stl(theta: torch.Tensor, out_stl: Path, *, voxel_size_mm: float, level: float) -> None:
+    import pyvista as pv
+
+    a = _theta_to_numpy_grid(theta).astype(np.float32)
+    nx, ny, nz = a.shape
+
+    grid = pv.ImageData()
+    grid.dimensions = (nx, ny, nz)
+    grid.spacing = (voxel_size_mm, voxel_size_mm, voxel_size_mm)
+    grid.origin = (0.0, 0.0, 0.0)
+    grid.point_data["theta"] = a.ravel(order="F")
+
+    surf = grid.contour(isosurfaces=1, rng=[float(level), float(level)], scalars="theta")
+    if surf is None or surf.n_points == 0:
+        raise RuntimeError(f"No surface extracted. Try lowering iso threshold (level={level}).")
+
+    out_stl.parent.mkdir(parents=True, exist_ok=True)
+    surf.save(str(out_stl))
+
+
+def _progress_pct(last_iter: int, total_iters: int) -> float:
+    if total_iters <= 0:
+        return 0.0
+    pct = (float(last_iter) / float(total_iters)) * 100.0
+    return float(max(0.0, min(100.0, pct)))
+
+
+def _health_status(run: Dict[str, Any]) -> str:
+    if run.get("error_text"):
+        return "ERROR"
+
+    run_dir = run.get("run_dir")
+    if run_dir:
+        p = Path(str(run_dir)) / "logs" / "run_error.txt"
+        try:
+            if p.exists() and p.is_file() and p.stat().st_size > 0:
+                return "ERROR"
+        except Exception:
+            pass
+
+    try:
+        warnings = run.get("warnings_json") or "[]"
+        arr = json.loads(warnings) if isinstance(warnings, str) else warnings
+        if isinstance(arr, list) and len(arr) > 0:
+            return "WARN"
+    except Exception:
+        return "WARN"
+
+    return "OK"
+
+
+# -----------------------------
+# API models
+# -----------------------------
+class RunCreateRequest(BaseModel):
+    name: str = Field(default="untitled")
+    notes: Optional[str] = Field(default=None)
+    material: Optional[str] = Field(default=None)
+    voxel_size_mm: Optional[float] = Field(default=None)
+    probe_mode: Optional[str] = Field(default=None)
+
+
+class RunCreateResponse(BaseModel):
+    run_id: str
+    run_dir: str
+    created_unix_s: float
+    ph4_dir: str
+    lock_id: str
+    core_freeze_id: str
+
+
+class DomainInput(BaseModel):
+    domain: Dict[str, Any]
+
+
+class ProcessInput(BaseModel):
+    material: str
+    params: Dict[str, Any] = Field(default_factory=dict)
+    expert_override: bool = False
+    override_reason: Optional[str] = None
+
+
+class OptConfigInput(BaseModel):
+    total_iters: int = 200
+    snapshot_every: int = 10
+    iso_threshold: float = 0.525
+    objective: str = "compliance"
+    target_vf: Optional[float] = None
+
+
+class DomainPresetRequest(BaseModel):
+    preset: str = Field(...)
+
+
+class RunStartResponse(BaseModel):
+    ok: bool = True
+    run_id: str
+    status: str
+
+
+class ControlRequest(BaseModel):
+    reason: Optional[str] = None
+
+
+class DomainCubeRequest(BaseModel):
+    x_mm: float = Field(..., gt=0)
+    y_mm: float = Field(..., gt=0)
+    z_mm: float = Field(..., gt=0)
+    voxel_size_mm: float = Field(..., gt=0)
+    preset: str = Field(default="cantilever")
+
+
+# -----------------------------
+# Run CRUD
+# -----------------------------
+@router.post("", response_model=RunCreateResponse)
+def create_run(req: RunCreateRequest) -> RunCreateResponse:
+    if not PH4_DIR.exists():
+        raise HTTPException(status_code=500, detail=f"PH4_DIR not found: {PH4_DIR}")
+    ids = _ph4_ids()
+
+    run_id = f"run_{time.strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
+    run_dir = RUNS_ROOT / run_id
+    RUNS_ROOT.mkdir(parents=True, exist_ok=True)
+
+    try:
+        _ensure_run_dirs(run_dir)
+    except FileExistsError:
+        raise HTTPException(status_code=409, detail="Run dir already exists. Retry.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create run dirs: {e}")
+
+    created = time.time()
+    status = "CREATED"
+
+    _write_json(
+        run_dir / "inputs" / "run_meta.json",
+        {
+            "run_id": run_id,
+            "name": req.name,
+            "notes": req.notes,
+            "created_unix_s": created,
+            "status": status,
+            "material": req.material,
+            "voxel_size_mm": req.voxel_size_mm,
+            "probe_mode": req.probe_mode,
+            "ph4_dir": str(PH4_DIR),
+            "lock_id": ids["lock_id"],
+            "core_freeze_id": ids["core_freeze_id"],
+        },
+    )
+
+    con = _connect()
+    try:
+        sql = """
+        INSERT INTO runs(
+            run_id, name, status, created_unix_s, updated_unix_s,
+            material, voxel_size_mm, probe_mode,
+            ph4_dir, lock_id, core_freeze_id,
+            run_dir, last_iter, total_iters, warnings_json, error_text,
+            control_state, paused_at_unix_s, stop_reason
+        )
+        VALUES(?,?,?,?,?,
+               ?,?,?, 
+               ?,?,?, 
+               ?,?,?,?,?, 
+               ?,?,?)
+        """
+        values = (
+            run_id,
+            req.name,
+            status,
+            created,
+            created,
+            req.material,
+            req.voxel_size_mm,
+            req.probe_mode,
+            str(PH4_DIR),
+            ids["lock_id"],
+            ids["core_freeze_id"],
+            str(run_dir),
+            0,
+            0,
+            "[]",
+            None,
+            "IDLE",
+            None,
+            None,
+        )
+        con.execute(sql, values)
+        con.commit()
+    finally:
+        con.close()
+
+    return RunCreateResponse(
+        run_id=run_id,
+        run_dir=str(run_dir),
+        created_unix_s=created,
+        ph4_dir=str(PH4_DIR),
+        lock_id=ids["lock_id"],
+        core_freeze_id=ids["core_freeze_id"],
+    )
+
+
+@router.post("/{run_id}/clone")
+def clone_run(run_id: str):
+    ids = _ph4_ids()
+
+    con = _connect()
+    try:
+        src = _get_run_row(con, run_id)
+        src_dir = Path(src["run_dir"])
+    finally:
+        con.close()
+
+    new_run_id = f"run_{time.strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
+    new_dir = RUNS_ROOT / new_run_id
+    RUNS_ROOT.mkdir(parents=True, exist_ok=True)
+    _ensure_run_dirs(new_dir)
+
+    src_inputs = src_dir / "inputs"
+    dst_inputs = new_dir / "inputs"
+    for p in src_inputs.glob("*"):
+        if p.is_file():
+            shutil.copy2(str(p), str(dst_inputs / p.name))
+
+    meta_p = dst_inputs / "run_meta.json"
+    meta = {}
+    if meta_p.exists():
+        try:
+            meta = json.loads(meta_p.read_text())
+        except Exception:
+            meta = {}
+    meta.update(
+        {
+            "run_id": new_run_id,
+            "created_unix_s": time.time(),
+            "status": "CREATED",
+            "ph4_dir": str(PH4_DIR),
+            "lock_id": ids["lock_id"],
+            "core_freeze_id": ids["core_freeze_id"],
+        }
+    )
+    _write_json(meta_p, meta)
+
+    con = _connect()
+    try:
+        created = time.time()
+        sql = """
+        INSERT INTO runs(
+            run_id, name, status, created_unix_s, updated_unix_s,
+            material, voxel_size_mm, probe_mode,
+            ph4_dir, lock_id, core_freeze_id,
+            run_dir, last_iter, total_iters, warnings_json, error_text,
+            control_state, paused_at_unix_s, stop_reason
+        )
+        VALUES(?,?,?,?,?,
+               ?,?,?, 
+               ?,?,?, 
+               ?,?,?,?,?, 
+               ?,?,?)
+        """
+        values = (
+            new_run_id,
+            (src["name"] or "clone") + "_clone",
+            "CREATED",
+            created,
+            created,
+            src["material"],
+            src["voxel_size_mm"],
+            src["probe_mode"],
+            str(PH4_DIR),
+            ids["lock_id"],
+            ids["core_freeze_id"],
+            str(new_dir),
+            0,
+            int(src["total_iters"] or 0),
+            "[]",
+            None,
+            "IDLE",
+            None,
+            None,
+        )
+        con.execute(sql, values)
+        con.commit()
+    finally:
+        con.close()
+
+    return {"ok": True, "run_id": new_run_id, "run_dir": str(new_dir)}
+
+
+@router.get("")
+def list_runs(limit: int = 50):
+    con = _connect()
+    try:
+        rows = con.execute(
+            """
+            SELECT run_id, name, status, created_unix_s, updated_unix_s,
+                   material, voxel_size_mm, probe_mode,
+                   ph4_dir, lock_id, core_freeze_id, run_dir,
+                   last_iter, total_iters, warnings_json, error_text,
+                   control_state, paused_at_unix_s, stop_reason
+            FROM runs
+            ORDER BY created_unix_s DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+        return {"ok": True, "runs": [dict(r) for r in rows]}
+    finally:
+        con.close()
+
+
+@router.get("/{run_id}")
+def get_run(run_id: str):
+    con = _connect()
+    try:
+        row = _get_run_row(con, run_id)
+        return {"ok": True, "run": dict(row)}
+    finally:
+        con.close()
+
+
+# -----------------------------
+# Inputs GET
+# -----------------------------
+@router.get("/{run_id}/inputs/domain")
+def get_domain(run_id: str):
+    con = _connect()
+    try:
+        run_dir = _get_run_dir(con, run_id)
+    finally:
+        con.close()
+    p = run_dir / "inputs" / "domain.json"
+    if not p.exists():
+        raise HTTPException(status_code=404, detail="domain.json not found")
+    return {"ok": True, "domain": json.loads(p.read_text())}
+
+
+@router.get("/{run_id}/inputs/process")
+def get_process(run_id: str):
+    con = _connect()
+    try:
+        run_dir = _get_run_dir(con, run_id)
+    finally:
+        con.close()
+    p = run_dir / "inputs" / "process.json"
+    if not p.exists():
+        raise HTTPException(status_code=404, detail="process.json not found")
+    return {"ok": True, "process": json.loads(p.read_text())}
+
+
+@router.get("/{run_id}/inputs/opt")
+def get_opt(run_id: str):
+    con = _connect()
+    try:
+        run_dir = _get_run_dir(con, run_id)
+    finally:
+        con.close()
+    p = run_dir / "inputs" / "opt_config.json"
+    if not p.exists():
+        raise HTTPException(status_code=404, detail="opt_config.json not found")
+    return {"ok": True, "opt": json.loads(p.read_text())}
+
+
+# -----------------------------
+# /latest
+# -----------------------------
+@router.get("/{run_id}/latest")
+def get_latest(run_id: str):
+    con = _connect()
+    try:
+        row = _get_run_row(con, run_id)
+        run = dict(row)
+    finally:
+        con.close()
+
+    run_dir = Path(run["run_dir"])
+    iters = _checkpoint_iters(run_dir)
+    latest_it = iters[-1] if iters else None
+
+    total = int(run.get("total_iters") or 0)
+    last = int(run.get("last_iter") or 0)
+
+    payload: Dict[str, Any] = {
+        "ok": True,
+        "schema_version": "latest_schema_v1",
+        "run": run,
+        "latest_checkpoint_iter": latest_it,
+        "num_checkpoints": len(iters),
+        "progress_pct": round(_progress_pct(last, total), 1),
+        "health_status": _health_status(run),
+        "preview_stl_url": None,
+        "preview_watertight_stl_url": None,
+    }
+
+    if latest_it is not None:
+        payload["preview_stl_url"] = f"/runs/{run_id}/checkpoints/{latest_it}/preview_stl?level=0.525"
+        payload["preview_watertight_stl_url"] = (
+            f"/runs/{run_id}/checkpoints/{latest_it}/preview_stl_watertight?level=0.525&pitch_mm=0.25"
+        )
+    return payload
+
+
+# -----------------------------
+# Artifact manifest / download
+# -----------------------------
+def _sha256_file(p: Path) -> str:
+    h = hashlib.sha256()
+    with p.open("rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _manifest_list_files(*, run_id: str, kind: str, root: Path, include_sha256: bool) -> List[Dict[str, Any]]:
+    items: List[Dict[str, Any]] = []
+    if not root.exists():
+        return items
+
+    files = sorted([p for p in root.rglob("*") if p.is_file()], key=lambda p: p.relative_to(root).as_posix())
+    for p in files:
+        rel = p.relative_to(root).as_posix()
+        st = p.stat()
+        entry: Dict[str, Any] = {
+            "kind": kind,
+            "path": str(p),
+            "rel": rel,
+            "bytes": int(st.st_size),
+            "mtime_unix_s": float(st.st_mtime),
+            "download_url": f"/runs/{run_id}/artifacts/download/{kind}/{rel}",
+        }
+        if include_sha256:
+            try:
+                entry["sha256"] = _sha256_file(p)
+            except Exception as e:
+                entry["sha256"] = None
+                entry["sha256_error"] = str(e)
+        items.append(entry)
+    return items
+
+
+@router.get("/{run_id}/artifacts")
+def get_artifacts(run_id: str, sha256: int = 0):
+    con = _connect()
+    try:
+        run_dir = _get_run_dir(con, run_id)
+    finally:
+        con.close()
+
+    inputs_dir = run_dir / "inputs"
+    ckpt_dir = run_dir / "checkpoints"
+    exports_dir = run_dir / "exports"
+    reports_dir = run_dir / "reports"
+    logs_dir = run_dir / "logs"
+
+    include_sha = bool(int(sha256))
+
+    return {
+        "ok": True,
+        "schema_version": "artifacts_schema_v1",
+        "run_id": run_id,
+        "paths": {
+            "run_dir": str(run_dir),
+            "inputs": str(inputs_dir),
+            "checkpoints": str(ckpt_dir),
+            "exports": str(exports_dir),
+            "reports": str(reports_dir),
+            "logs": str(logs_dir),
+        },
+        "inputs": _manifest_list_files(run_id=run_id, kind="inputs", root=inputs_dir, include_sha256=include_sha),
+        "checkpoints": _manifest_list_files(run_id=run_id, kind="checkpoints", root=ckpt_dir, include_sha256=include_sha),
+        "exports": _manifest_list_files(run_id=run_id, kind="exports", root=exports_dir, include_sha256=include_sha),
+        "reports": _manifest_list_files(run_id=run_id, kind="reports", root=reports_dir, include_sha256=include_sha),
+        "logs": _manifest_list_files(run_id=run_id, kind="logs", root=logs_dir, include_sha256=include_sha),
+    }
+
+
+def _artifact_base_dir(run_dir: Path, kind: str) -> Path:
+    k = (kind or "").strip().lower()
+    if k == "inputs":
+        return run_dir / "inputs"
+    if k == "checkpoints":
+        return run_dir / "checkpoints"
+    if k == "exports":
+        return run_dir / "exports"
+    if k == "reports":
+        return run_dir / "reports"
+    if k == "logs":
+        return run_dir / "logs"
+    raise HTTPException(status_code=400, detail=f"Unknown artifact kind '{kind}'")
+
+
+def _safe_resolve_under(base: Path, rel_path: str) -> Path:
+    base_resolved = base.resolve()
+    candidate = (base_resolved / rel_path).resolve()
+    try:
+        candidate.relative_to(base_resolved)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid rel_path (path traversal not allowed)")
+    return candidate
+
+
+@router.get("/{run_id}/artifacts/download/{kind}/{rel_path:path}")
+def download_artifact(run_id: str, kind: str, rel_path: str):
+    con = _connect()
+    try:
+        run_dir = _get_run_dir(con, run_id)
+    finally:
+        con.close()
+
+    base = _artifact_base_dir(run_dir, kind)
+    target = _safe_resolve_under(base, rel_path)
+
+    if not target.exists() or not target.is_file():
+        raise HTTPException(status_code=404, detail=f"Artifact not found: {kind}/{rel_path}")
+
+    media_type, _ = mimetypes.guess_type(str(target))
+    if media_type is None:
+        media_type = "application/octet-stream"
+    return FileResponse(path=str(target), media_type=media_type, filename=target.name)
+
+
+# -----------------------------
+# Inputs attach (POST)
+# -----------------------------
+@router.post("/{run_id}/inputs/domain")
+def set_domain(run_id: str, req: DomainInput):
+    con = _connect()
+    try:
+        run_dir = _get_run_dir(con, run_id)
+        p = run_dir / "inputs" / "domain.json"
+        _write_json(p, req.domain)
+        _touch_updated(con, run_id)
+        con.commit()
+        return {"ok": True, "path": str(p)}
+    finally:
+        con.close()
+
+
+@router.post("/{run_id}/inputs/process")
+def set_process(run_id: str, req: ProcessInput):
+    if req.expert_override and (not req.override_reason or not req.override_reason.strip()):
+        raise HTTPException(status_code=400, detail="override_reason required when expert_override=true")
+
+    con = _connect()
+    try:
+        run_dir = _get_run_dir(con, run_id)
+        p = run_dir / "inputs" / "process.json"
+        _write_json(p, req.model_dump())
+
+        now = time.time()
+        con.execute("UPDATE runs SET material=?, updated_unix_s=? WHERE run_id=?", (req.material, now, run_id))
+        con.commit()
+        return {"ok": True, "path": str(p)}
+    finally:
+        con.close()
+
+
+@router.post("/{run_id}/inputs/opt")
+def set_opt_config(run_id: str, req: OptConfigInput):
+    con = _connect()
+    try:
+        run_dir = _get_run_dir(con, run_id)
+        p = run_dir / "inputs" / "opt_config.json"
+        _write_json(p, req.model_dump())
+
+        now = time.time()
+        con.execute("UPDATE runs SET total_iters=?, updated_unix_s=? WHERE run_id=?", (int(req.total_iters), now, run_id))
+        con.commit()
+        return {"ok": True, "path": str(p)}
+    finally:
+        con.close()
+
+
+@router.post("/{run_id}/inputs/geometry_upload")
+async def geometry_upload(run_id: str, file: UploadFile = File(...)):
+    fn = (file.filename or "").lower()
+    if not (
+        fn.endswith(".stl")
+        or file.content_type in ("model/stl", "application/sla", "application/octet-stream", None)
+    ):
+        raise HTTPException(status_code=400, detail="Only STL upload is supported in v1 (file must end with .stl).")
+
+    con = _connect()
+    try:
+        run_dir = _get_run_dir(con, run_id)
+    finally:
+        con.close()
+
+    inputs_dir = run_dir / "inputs"
+    inputs_dir.mkdir(parents=True, exist_ok=True)
+
+    stl_path = inputs_dir / "geometry.stl"
+    data = await file.read()
+    if not data or len(data) < 64:
+        raise HTTPException(status_code=400, detail="Empty/invalid STL upload.")
+    stl_path.write_bytes(data)
+
+    try:
+        import trimesh
+
+        m_any = trimesh.load(str(stl_path), force="mesh")
+        if not isinstance(m_any, trimesh.Trimesh):
+            raise RuntimeError("Upload did not parse as a mesh.")
+        bounds = m_any.bounds
+        min_xyz = [float(bounds[0][0]), float(bounds[0][1]), float(bounds[0][2])]
+        max_xyz = [float(bounds[1][0]), float(bounds[1][1]), float(bounds[1][2])]
+        dims = [max_xyz[i] - min_xyz[i] for i in range(3)]
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to parse STL: {e}")
+
+    voxel_size_mm = _get_voxel_size_mm_from_run(run_dir)
+    nx = int(math.ceil(dims[0] / voxel_size_mm)) if voxel_size_mm > 0 else 0
+    ny = int(math.ceil(dims[1] / voxel_size_mm)) if voxel_size_mm > 0 else 0
+    nz = int(math.ceil(dims[2] / voxel_size_mm)) if voxel_size_mm > 0 else 0
+    fits_cap = nx <= 128 and ny <= 128 and nz <= 128
+    largest_dim = max(dims) if dims else 0.0
+    suggested_voxel = round(largest_dim / 128.0, 4) if largest_dim > 0 else voxel_size_mm
+
+    geom_meta = {
+        "filename": file.filename,
+        "stored_path": str(stl_path),
+        "bbox_mm": {"min": min_xyz, "max": max_xyz},
+        "dims_mm": dims,
+        "voxel_size_mm_used": voxel_size_mm,
+        "grid_estimate": [nx, ny, nz],
+        "fits_128_cubed": fits_cap,
+        "suggested_voxel_size_mm": suggested_voxel,
+    }
+    _write_json(inputs_dir / "geometry_meta.json", geom_meta)
+
+    con = _connect()
+    try:
+        _touch_updated(con, run_id)
+        con.commit()
+    finally:
+        con.close()
+
+    return {"ok": True, **geom_meta}
+
+
+@router.post("/{run_id}/inputs/domain_cube")
+def set_domain_cube(run_id: str, req: DomainCubeRequest):
+    nx = int(req.x_mm // req.voxel_size_mm)
+    ny = int(req.y_mm // req.voxel_size_mm)
+    nz = int(req.z_mm // req.voxel_size_mm)
+
+    if nx <= 0 or ny <= 0 or nz <= 0:
+        raise HTTPException(status_code=400, detail="Invalid dimensions/voxel_size: resulted in non-positive grid.")
+
+    cap = 128
+    if max(nx, ny, nz) > cap:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Domain too large for v1 cap {cap}^3. Got grid=({nx},{ny},{nz}). Increase voxel_size or reduce mm dims.",
+        )
+
+    con = _connect()
+    try:
+        run_dir = _get_run_dir(con, run_id)
+        inputs_dir = run_dir / "inputs"
+        inputs_dir.mkdir(parents=True, exist_ok=True)
+
+        domain = {
+            "preset": "cube",
+            "units": "mm",
+            "voxel_size_mm": float(req.voxel_size_mm),
+            "grid": {"nx": nx, "ny": ny, "nz": nz},
+            "build_direction": "+Z",
+            "supports": [
+                {
+                    "type": "box",
+                    "name": "fixed_x0_plane",
+                    "bounds_ijk": {"i": [0, 1], "j": [0, ny], "k": [0, nz]},
+                }
+            ],
+            "loads": [
+                {
+                    "type": "box",
+                    "name": "tip_down_force",
+                    "bounds_ijk": {
+                        "i": [max(nx - 8, 0), nx],
+                        "j": [int(0.44 * ny), int(0.56 * ny)],
+                        "k": [int(0.44 * nz), int(0.56 * nz)],
+                    },
+                    "force": {"fx": 0.0, "fy": 0.0, "fz": -1.0},
+                    "magnitude": 1.0,
+                    "units_force": "arb",
+                }
+            ],
+            "notes": "v1 cube domain generated from mm dims; build dir locked +Z; default cantilever rule.",
+        }
+
+        out_path = inputs_dir / "domain.json"
+        _write_json(out_path, domain)
+
+        meta_p = inputs_dir / "run_meta.json"
+        if meta_p.exists():
+            try:
+                meta = json.loads(meta_p.read_text())
+                meta["voxel_size_mm"] = float(req.voxel_size_mm)
+                _write_json(meta_p, meta)
+            except Exception:
+                pass
+
+        _touch_updated(con, run_id)
+        con.commit()
+        return {
+            "ok": True,
+            "path": str(out_path),
+            "grid": [nx, ny, nz],
+            "voxel_size_mm": float(req.voxel_size_mm),
+        }
+    finally:
+        con.close()
+
+
+# -----------------------------
+# Checkpoint listing + previews
+# -----------------------------
+def _checkpoint_iters(run_dir: Path) -> List[int]:
+    ckpt_dir = run_dir / "checkpoints"
+    if not ckpt_dir.exists():
+        return []
+    iters: List[int] = []
+    for p in ckpt_dir.glob("theta_phys_iter_*.pt"):
+        m = re.search(r"theta_phys_iter_(\d{6})\.pt$", p.name)
+        if m:
+            iters.append(int(m.group(1)))
+    if iters:
+        return sorted(set(iters))
+    for p in ckpt_dir.glob("checkpoint_iter_*.json"):
+        m = re.search(r"checkpoint_iter_(\d{6})\.json$", p.name)
+        if m:
+            iters.append(int(m.group(1)))
+    return sorted(set(iters))
+
+
+@router.get("/{run_id}/checkpoints")
+def list_checkpoints(run_id: str):
+    con = _connect()
+    try:
+        run_dir = _get_run_dir(con, run_id)
+    finally:
+        con.close()
+
+    ckpt_dir = run_dir / "checkpoints"
+    if not ckpt_dir.exists():
+        raise HTTPException(status_code=404, detail="checkpoints dir not found")
+
+    pat = re.compile(r"theta_phys_iter_(\d{6})\.pt$")
+    items = []
+    for p in sorted(ckpt_dir.glob("theta_phys_iter_*.pt")):
+        m = pat.search(p.name)
+        if not m:
+            continue
+        it = int(m.group(1))
+        meta = ckpt_dir / f"checkpoint_iter_{it:06d}.json"
+        items.append({"iter": it, "theta_pt": str(p), "meta_json": str(meta) if meta.exists() else None})
+
+    return {
+        "ok": True,
+        "run_id": run_id,
+        "num": len(items),
+        "iters": [x["iter"] for x in items],
+        "items": items,
+        "latest": items[-1] if items else None,
+    }
+
+
+@router.get("/{run_id}/checkpoints/{it}/theta_pt")
+def download_theta_checkpoint(run_id: str, it: int):
+    con = _connect()
+    try:
+        run_dir = _get_run_dir(con, run_id)
+    finally:
+        con.close()
+
+    ckpt_dir = run_dir / "checkpoints"
+    theta_path = ckpt_dir / f"theta_phys_iter_{int(it):06d}.pt"
+    if not theta_path.exists():
+        raise HTTPException(status_code=404, detail=f"Checkpoint not found for iter={it}")
+
+    return FileResponse(path=str(theta_path), media_type="application/octet-stream", filename=theta_path.name)
+
+
+@router.get("/{run_id}/checkpoints/{it}/preview_stl")
+def preview_checkpoint_stl(run_id: str, it: int, level: float = 0.525):
+    con = _connect()
+    try:
+        run_dir = _get_run_dir(con, run_id)
+    finally:
+        con.close()
+
+    ckpt_dir = run_dir / "checkpoints"
+    theta_path = ckpt_dir / f"theta_phys_iter_{int(it):06d}.pt"
+    if not theta_path.exists():
+        raise HTTPException(status_code=404, detail=f"Checkpoint not found for iter={it}")
+
+    voxel_size_mm = _get_voxel_size_mm_from_run(run_dir)
+
+    out_dir = run_dir / "exports" / "preview"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_stl = out_dir / f"preview_iter_{int(it):06d}_lvl_{level:.3f}.stl"
+
+    if not out_stl.exists():
+        theta = _safe_torch_load_tensor(theta_path)
+        _theta_tensor_to_stl(theta, out_stl, voxel_size_mm=voxel_size_mm, level=float(level))
+
+    return FileResponse(path=str(out_stl), media_type="model/stl", filename=out_stl.name)
+
+
+@router.get("/{run_id}/checkpoints/{it}/preview_stl_watertight")
+def preview_checkpoint_stl_watertight(run_id: str, it: int, level: float = 0.525, pitch_mm: float = 0.25):
+    con = _connect()
+    try:
+        run_dir = _get_run_dir(con, run_id)
+    finally:
+        con.close()
+
+    ckpt_dir = run_dir / "checkpoints"
+    theta_path = ckpt_dir / f"theta_phys_iter_{int(it):06d}.pt"
+    if not theta_path.exists():
+        raise HTTPException(status_code=404, detail=f"Checkpoint not found for iter={it}")
+
+    voxel_size_mm = _get_voxel_size_mm_from_run(run_dir)
+
+    out_dir = run_dir / "exports" / "preview_watertight"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_stl = out_dir / f"preview_watertight_iter_{int(it):06d}_lvl_{level:.3f}_pitch_{pitch_mm:.3f}.stl"
+
+    if not out_stl.exists():
+        theta = _safe_torch_load_tensor(theta_path)
+        _theta_tensor_to_watertight_stl_from_volume(
+            theta,
+            out_stl,
+            voxel_size_mm=voxel_size_mm,
+            level=float(level),
+            cleanup=True,
+        )
+
+    return FileResponse(path=str(out_stl), media_type="model/stl", filename=out_stl.name)
+
+
+# -----------------------------
+# Reports
+# -----------------------------
+def _write_summary_json(run_id: str, run_dir: Path) -> Path:
+    con = _connect()
+    try:
+        row = _get_run_row(con, run_id)
+        run = dict(row)
+    finally:
+        con.close()
+
+    iters = _checkpoint_iters(run_dir)
+    latest_it = iters[-1] if iters else None
+
+    inputs_dir = run_dir / "inputs"
+    domain = json.loads((inputs_dir / "domain.json").read_text()) if (inputs_dir / "domain.json").exists() else None
+    process = json.loads((inputs_dir / "process.json").read_text()) if (inputs_dir / "process.json").exists() else None
+    opt = json.loads((inputs_dir / "opt_config.json").read_text()) if (inputs_dir / "opt_config.json").exists() else None
+
+    exports_dir = run_dir / "exports"
+    physics_files = sorted((exports_dir / "physics").glob("physics_manifest_iter_*.vtp")) if (exports_dir / "physics").exists() else []
+    preview_files = sorted((exports_dir / "preview").glob("preview_iter_*.stl")) if (exports_dir / "preview").exists() else []
+    wt_files = sorted((exports_dir / "preview_watertight").glob("preview_watertight_iter_*.stl")) if (exports_dir / "preview_watertight").exists() else []
+
+    out = {
+        "schema": "summary_v1",
+        "run": run,
+        "latest_checkpoint_iter": latest_it,
+        "domain": domain,
+        "process": process,
+        "opt_config": opt,
+        "exports": {
+            "physics_vtp_latest": physics_files[-1].name if physics_files else None,
+            "preview_stl_latest": preview_files[-1].name if preview_files else None,
+            "watertight_stl_latest": wt_files[-1].name if wt_files else None,
+        },
+        "generated_unix_s": time.time(),
+    }
+
+    reports_dir = run_dir / "reports"
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    p = reports_dir / "summary.json"
+    _write_json(p, out)
+    return p
+
+
+@router.post("/{run_id}/reports/summary")
+def create_summary(run_id: str):
+    con = _connect()
+    try:
+        run_dir = _get_run_dir(con, run_id)
+    finally:
+        con.close()
+
+    p = _write_summary_json(run_id, run_dir)
+    return {"ok": True, "path": str(p), "download_url": f"/runs/{run_id}/artifacts/download/reports/{p.name}"}
+
+
+@router.get("/{run_id}/reports/summary")
+def download_summary(run_id: str):
+    con = _connect()
+    try:
+        run_dir = _get_run_dir(con, run_id)
+    finally:
+        con.close()
+
+    p = run_dir / "reports" / "summary.json"
+    if not p.exists():
+        p = _write_summary_json(run_id, run_dir)
+    return FileResponse(path=str(p), media_type="application/json", filename=p.name)
+
+
+# -----------------------------
+# Run control
+# -----------------------------
+@router.post("/{run_id}/pause")
+def pause_run(run_id: str, req: ControlRequest = ControlRequest()):
+    st = _get_status_control(run_id)
+    cur = (st.get("status") or "").upper()
+    if cur != "RUNNING":
+        raise HTTPException(status_code=409, detail=f"Can only pause a RUNNING run (current={cur})")
+
+    reason = (req.reason or "pause requested").strip()
+    _set_control_state(run_id, "PAUSE_REQUESTED", reason=reason, overwrite_reason=True)
+    return {"ok": True, "run_id": run_id, "control_state": "PAUSE_REQUESTED"}
+
+
+@router.post("/{run_id}/resume")
+def resume_run(run_id: str):
+    st = _get_status_control(run_id)
+    cur = (st.get("status") or "").upper()
+    if cur != "PAUSED":
+        raise HTTPException(status_code=409, detail=f"Can only resume a PAUSED run (current={cur})")
+
+    _set_control_state(run_id, "RUNNING", reason=None, overwrite_reason=True)
+
+    con = _connect()
+    try:
+        now = time.time()
+        con.execute(
+            "UPDATE runs SET status=?, updated_unix_s=?, paused_at_unix_s=NULL WHERE run_id=?",
+            ("RUNNING", now, run_id),
+        )
+        con.commit()
+    finally:
+        con.close()
+
+    return {"ok": True, "run_id": run_id, "control_state": "RUNNING"}
+
+
+@router.post("/{run_id}/stop")
+def stop_run(run_id: str, req: ControlRequest = ControlRequest()):
+    st = _get_status_control(run_id)
+    cur = (st.get("status") or "").upper()
+    if cur not in ("RUNNING", "PAUSED"):
+        raise HTTPException(status_code=409, detail=f"Can only stop a RUNNING/PAUSED run (current={cur})")
+
+    reason = (req.reason or "stop requested").strip()
+    _set_control_state(run_id, "STOP_REQUESTED", reason=reason, overwrite_reason=True)
+    return {"ok": True, "run_id": run_id, "control_state": "STOP_REQUESTED"}
+
+
+# -----------------------------
+# Runner + start endpoint
+# -----------------------------
+def _runner_stub(run_id: str, run_dir: Path) -> None:
+    def _get_ctl() -> str:
+        con = _connect()
+        try:
+            row = con.execute("SELECT control_state, stop_reason FROM runs WHERE run_id=?", (run_id,)).fetchone()
+            if row is None:
+                return "STOP_REQUESTED"
+            s = row["control_state"] or "RUNNING"
+            return str(s).strip().upper()
+        finally:
+            con.close()
+
+    def _mark_paused_once() -> None:
+        con = _connect()
+        try:
+            now = time.time()
+            con.execute(
+                """
+                UPDATE runs
+                SET status=?, updated_unix_s=?, paused_at_unix_s=?
+                WHERE run_id=?
+                """,
+                ("PAUSED", now, now, run_id),
+            )
+            con.commit()
+        finally:
+            con.close()
+
+    try:
+        _update_run_status(run_id, "RUNNING", error_text=None)
+
+        payload = _read_required_inputs(run_dir)
+        opt = payload["opt"]
+        total_iters = int(opt.get("total_iters", 200))
+        snap_every = int(opt.get("snapshot_every", 10))
+        iso_threshold = float(opt.get("iso_threshold", 0.525))
+
+        logs_dir = run_dir / "logs"
+        logs_dir.mkdir(parents=True, exist_ok=True)
+        log_path = logs_dir / "run.log"
+        with log_path.open("a") as f:
+            f.write(f"[RUN_START] run_id={run_id} total_iters={total_iters} snapshot_every={snap_every}\n")
+
+        theta_phys_path = _run_real_optimizer_once(log_path, run_dir)
+        theta_phys = _safe_torch_load_tensor(theta_phys_path)
+
+        with log_path.open("a") as f:
+            f.write(f"[RUN_ENGINE_DONE] theta_source={theta_phys_path}\n")
+
+        _set_control_state(run_id, "RUNNING", reason=None, overwrite_reason=False)
+
+        for it in range(1, total_iters + 1):
+            ctl = _get_ctl()
+
+            if ctl == "STOP_REQUESTED":
+                with log_path.open("a") as f:
+                    f.write(f"[RUN_STOPPED] run_id={run_id} at_iter={it}\n")
+                st = _get_status_control(run_id)
+                reason = st.get("stop_reason") or "stop requested"
+                _finalize_run_terminal(run_id, "STOPPED", reason=reason)
+                return
+
+            if ctl == "PAUSE_REQUESTED":
+                _mark_paused_once()
+                with log_path.open("a") as f:
+                    f.write(f"[RUN_PAUSED] run_id={run_id} at_iter={it}\n")
+                while True:
+                    ctl2 = _get_ctl()
+                    if ctl2 == "STOP_REQUESTED":
+                        with log_path.open("a") as f:
+                            f.write(f"[RUN_STOPPED] run_id={run_id} while_paused at_iter={it}\n")
+                        st = _get_status_control(run_id)
+                        reason = st.get("stop_reason") or "stop requested"
+                        _finalize_run_terminal(run_id, "STOPPED", reason=reason)
+                        return
+                    if ctl2 == "RUNNING":
+                        con = _connect()
+                        try:
+                            now = time.time()
+                            con.execute(
+                                "UPDATE runs SET status=?, updated_unix_s=?, paused_at_unix_s=NULL WHERE run_id=?",
+                                ("RUNNING", now, run_id),
+                            )
+                            con.commit()
+                        finally:
+                            con.close()
+                        with log_path.open("a") as f:
+                            f.write(f"[RUN_RESUMED] run_id={run_id} at_iter={it}\n")
+                        break
+                    time.sleep(0.25)
+
+            if (it % snap_every) == 0 or it == total_iters:
+                write_checkpoint(run_id=run_id, run_dir=run_dir, it=it, theta_phys=theta_phys)
+
+                vtp_path = _export_physics_manifest_vtp(
+                    run_dir=run_dir,
+                    it=it,
+                    iso_threshold=iso_threshold,
+                )
+                with log_path.open("a") as f:
+                    f.write(f"[RUN_EXPORT_VTP] iter={it} path={vtp_path.name}\n")
+
+                voxel_size_mm = _get_voxel_size_mm_from_run(run_dir)
+                theta_path = run_dir / "checkpoints" / f"theta_phys_iter_{int(it):06d}.pt"
+                theta = _safe_torch_load_tensor(theta_path)
+
+                prev_dir = run_dir / "exports" / "preview"
+                prev_dir.mkdir(parents=True, exist_ok=True)
+                prev_stl = prev_dir / f"preview_iter_{int(it):06d}_lvl_{iso_threshold:.3f}.stl"
+                if not prev_stl.exists():
+                    _theta_tensor_to_stl(theta, prev_stl, voxel_size_mm=voxel_size_mm, level=iso_threshold)
+
+                wt_dir = run_dir / "exports" / "preview_watertight"
+                wt_dir.mkdir(parents=True, exist_ok=True)
+                wt_stl = wt_dir / f"preview_watertight_iter_{int(it):06d}_lvl_{iso_threshold:.3f}_pitch_0.250.stl"
+                if not wt_stl.exists():
+                    _theta_tensor_to_watertight_stl_from_volume(
+                        theta,
+                        wt_stl,
+                        voxel_size_mm=voxel_size_mm,
+                        level=iso_threshold,
+                        cleanup=True,
+                    )
+
+            _update_run_progress(run_id, it)
+            time.sleep(0.01)
+
+        with log_path.open("a") as f:
+            f.write(f"[RUN_DONE] run_id={run_id}\n")
+        _finalize_run_terminal(run_id, "DONE", reason=None)
+
+        try:
+            _write_summary_json(run_id, run_dir)
+        except Exception:
+            pass
+
+        return
+
+    except Exception as e:
+        tb = traceback.format_exc()
+        try:
+            (run_dir / "logs").mkdir(parents=True, exist_ok=True)
+            (run_dir / "logs" / "run_error.txt").write_text(tb)
+        except Exception:
+            pass
+        _finalize_run_terminal(run_id, "FAILED", reason=None, error_text=str(e))
+
+
+@router.post("/{run_id}/start", response_model=RunStartResponse)
+def start_run(run_id: str) -> RunStartResponse:
+    con = _connect()
+    try:
+        row = con.execute("SELECT run_id, status, run_dir FROM runs WHERE run_id=?", (run_id,)).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="Run not found")
+
+        status = (row["status"] or "").upper()
+        run_dir = Path(row["run_dir"])
+
+        if status in ("RUNNING", "PAUSED"):
+            raise HTTPException(status_code=409, detail=f"Run is already active (current={status})")
+        if status in ("DONE", "STOPPED"):
+            raise HTTPException(status_code=409, detail=f"Run is terminal (current={status})")
+
+        try:
+            _read_required_inputs(run_dir)
+        except Exception as e:
+            _set_control_state(run_id, "IDLE", reason=str(e), overwrite_reason=True)
+            raise HTTPException(status_code=400, detail=str(e))
+
+        _clear_start_leftovers(run_id)
+        _update_run_status(run_id, "QUEUED", error_text=None)
+
+        t = threading.Thread(target=_runner_stub, args=(run_id, run_dir), daemon=True)
+        t.start()
+
+        return RunStartResponse(run_id=run_id, status="QUEUED")
+    finally:
+        con.close()

@@ -1,0 +1,27 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: lpbf_backend
+    working_dir: /app
+    ports:
+      - "8000:8000"
+    environment:
+      PYVISTA_OFF_SCREEN: "true"
+      PYVISTA_EGL: "true"
+    volumes:
+      - ./artifacts:/app/artifacts
+      - ./outputs:/app/outputs
+    command: python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    container_name: lpbf_ui
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend

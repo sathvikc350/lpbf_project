@@ -1,0 +1,157 @@
+{
+  "phase": "Phase-3 Material Registry",
+  "created_unix_s": 1770930934.249285,
+  "engine_lock_id": "9f5e72f637757cbcf9c18a0db7433a65fbe38cade38f3d9545971cacfd43ce39",
+  "phase2_diag_dir": "/workspaces/lpbf_project/artifacts/phase2_diag_locked_in718_20260211_204203",
+  "surrogate_bundle": {
+    "bundle_dir": "/workspaces/lpbf_project/artifacts/phase4_engine_freeze_locked_in718_20260216_205826/surrogate_bundle/meltpool_v1",
+    "surrogate_contract_id": "bd99c66c6359c278c2bf825d3ab42368acf5c0bedc021110699e0bcdcbb2569f",
+    "fingerprint_sha256": {
+      "surrogate_config.json": "6f6d7c27f0a1552ed150a00dc12147cfcb387a8e33fe31445ddd53bd78e516c2",
+      "weights.pt": "3d895a6886f490e02453c483b1f584e59ed21deeac1e4f7f29e4660203fdae19",
+      "scaler.joblib": "a567656800848dd8784c943df823d7ca49bc9744e078f3074ec5ce79ede5818c"
+    },
+    "numeric_features": [
+      "P_W",
+      "v_mm_per_s",
+      "LED_J_per_mm",
+      "VED_J_per_mm3",
+      "h_mm",
+      "t_mm"
+    ],
+    "outputs": [
+      "width_um",
+      "depth_um"
+    ],
+    "units": {
+      "P_W": "W",
+      "v_mm_per_s": "mm/s",
+      "h_mm": "mm",
+      "t_mm": "mm",
+      "LED_J_per_mm": "J/mm",
+      "VED_J_per_mm3": "J/mm^3",
+      "outputs": "um"
+    },
+    "weights_sha256": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+  },
+  "conventions_locked": {
+    "overhang_angle_measured_from": "horizontal_build_plate",
+    "overhang_threshold_deg": 45.0,
+    "violation_condition": "angle_from_horizontal < threshold (ceiling-like)",
+    "solid_threshold": 0.5,
+    "islands_definition": "solid voxels not connected to Z=0 (6-connectivity)"
+  },
+  "diagnostic_thresholds_from_phase2": {
+    "voxel_size_mm": 0.25,
+    "minfeature_erosion_passes": 1,
+    "recoater_step_vox": 2,
+    "recoater_step_mm": 0.5,
+    "thermal_cluster_kernel_vox": [
+      5,
+      5,
+      5
+    ],
+    "thermal_cluster_thresh": 0.85
+  },
+  "assumed_process_constants_from_phase2": {
+    "hatch_spacing_mm": 0.1,
+    "layer_thickness_mm": 0.04,
+    "ved_formula": "VED = P / (v * h * t) (J/mm^3)",
+    "note": "These constants are placeholders unless confirmed per machine/material process window."
+  },
+  "materials": {
+    "316L": {
+      "material_id": 0,
+      "validity_window": {
+        "P_W": [
+          100.0,
+          600.0
+        ],
+        "v_mm_per_s": [
+          400.0,
+          1100.0
+        ],
+        "h_mm": [
+          0.11,
+          0.11
+        ],
+        "t_mm": [
+          0.04,
+          0.04
+        ],
+        "VED_J_per_mm3": null,
+        "LED_J_per_mm": null
+      },
+      "process_health": {
+        "target_ved_range_J_per_mm3": null,
+        "target_led_range_J_per_mm": null
+      },
+      "thermal_history": {
+        "enabled": false,
+        "note": "Placeholder for Phase-5/6: track local re-melts / revisit counts along scan strategy."
+      }
+    },
+    "IN718": {
+      "material_id": 1,
+      "validity_window": {
+        "P_W": [
+          100.0,
+          600.0
+        ],
+        "v_mm_per_s": [
+          400.0,
+          1100.0
+        ],
+        "h_mm": [
+          0.11,
+          0.11
+        ],
+        "t_mm": [
+          0.04,
+          0.04
+        ],
+        "VED_J_per_mm3": null,
+        "LED_J_per_mm": null
+      },
+      "process_health": {
+        "target_ved_range_J_per_mm3": null,
+        "target_led_range_J_per_mm": null
+      },
+      "thermal_history": {
+        "enabled": false,
+        "note": "Placeholder for Phase-5/6: track local re-melts / revisit counts along scan strategy."
+      }
+    },
+    "Ti64": {
+      "material_id": 2,
+      "validity_window": {
+        "P_W": [
+          200.0,
+          370.0
+        ],
+        "v_mm_per_s": [
+          1300.0,
+          1700.0
+        ],
+        "h_mm": [
+          0.1,
+          0.1
+        ],
+        "t_mm": [
+          0.03,
+          0.03
+        ],
+        "VED_J_per_mm3": null,
+        "LED_J_per_mm": null
+      },
+      "process_health": {
+        "target_ved_range_J_per_mm3": null,
+        "target_led_range_J_per_mm": null
+      },
+      "thermal_history": {
+        "enabled": false,
+        "note": "Placeholder for Phase-5/6: track local re-melts / revisit counts along scan strategy."
+      }
+    }
+  }
+}

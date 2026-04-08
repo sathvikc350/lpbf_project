@@ -1,0 +1,465 @@
+{
+  "phase": "Phase-3 Probe Surrogates",
+  "created_unix_s": 1770928521.3417716,
+  "bundle": "/workspaces/lpbf_project/lpbf_to/surrogates/meltpool_v1",
+  "config_path": "/workspaces/lpbf_project/lpbf_to/surrogates/meltpool_v1/surrogate_config.json",
+  "weights_path": "/workspaces/lpbf_project/lpbf_to/surrogates/meltpool_v1/weights.pt",
+  "config_sha256": "6f6d7c27f0a1552ed150a00dc12147cfcb387a8e33fe31445ddd53bd78e516c2",
+  "weights_sha256": "3d895a6886f490e02453c483b1f584e59ed21deeac1e4f7f29e4660203fdae19",
+  "numeric_features": [
+    "P_W",
+    "v_mm_per_s",
+    "LED_J_per_mm",
+    "VED_J_per_mm3",
+    "h_mm",
+    "t_mm"
+  ],
+  "outputs": [
+    "width_um",
+    "depth_um"
+  ],
+  "material_to_id": {
+    "316L": 0,
+    "IN718": 1,
+    "Ti64": 2
+  },
+  "weights_load": {
+    "loaded": true,
+    "missing_keys": [
+      "emb.weight"
+    ],
+    "unexpected_keys": [
+      "material_emb.weight"
+    ],
+    "error": null
+  },
+  "probe_point": {
+    "P_W": 300.0,
+    "v_mm_per_s": 900.0,
+    "h_mm": 0.11,
+    "t_mm": 0.03,
+    "LED_J_per_mm": 0.3333333333333333,
+    "VED_J_per_mm3": 101.01010101010102
+  },
+  "per_material": {
+    "316L": {
+      "material_id": 0,
+      "validity": {
+        "material": "316L",
+        "values": {
+          "P_W": 300.0,
+          "v_mm_per_s": 900.0,
+          "h_mm": 0.11,
+          "t_mm": 0.03,
+          "LED_J_per_mm": 0.3333333333333333,
+          "VED_J_per_mm3": 101.01010101010102
+        },
+        "global": {
+          "P_W": {
+            "has_range": true,
+            "lo": 100.0,
+            "hi": 600.0,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "v_mm_per_s": {
+            "has_range": true,
+            "lo": 400.0,
+            "hi": 1700.0,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "h_mm": {
+            "has_range": true,
+            "lo": 0.1,
+            "hi": 0.11,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "t_mm": {
+            "has_range": true,
+            "lo": 0.03,
+            "hi": 0.04,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "LED_J_per_mm": {
+            "has_range": true,
+            "lo": 0.0909090909090909,
+            "hi": 1.5,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "VED_J_per_mm3": {
+            "has_range": true,
+            "lo": 20.66115702479339,
+            "hi": 340.90909090909093,
+            "inside": true,
+            "outside_frac": 0.0
+          }
+        },
+        "by_material": {
+          "P_W": {
+            "has_range": true,
+            "lo": 100.0,
+            "hi": 600.0,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "v_mm_per_s": {
+            "has_range": true,
+            "lo": 400.0,
+            "hi": 1100.0,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "h_mm": {
+            "has_range": true,
+            "lo": 0.11,
+            "hi": 0.11,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "t_mm": {
+            "has_range": true,
+            "lo": 0.04,
+            "hi": 0.04,
+            "inside": false,
+            "outside_frac": 10000000000.000002
+          },
+          "LED_J_per_mm": {
+            "has_range": false
+          },
+          "VED_J_per_mm3": {
+            "has_range": false
+          }
+        },
+        "warn": [
+          "TrustBoundary(Material): t_mm is >10% outside 316L validity window."
+        ],
+        "schema_sha256": "296f3cd804f042aef8915bd3dd0b7c1a8595f2ce9a6e14ff6293ccbff88b59cb"
+      },
+      "pred_at_base": {
+        "width_um": 311.2220458984375,
+        "depth_um": 631.4252319335938
+      },
+      "monotonic_probe": {
+        "material": "316L",
+        "P_vals": [
+          240.0,
+          270.0,
+          300.0,
+          330.0,
+          360.0
+        ],
+        "v_vals": [
+          720.0,
+          810.0,
+          900.0,
+          990.0000000000001,
+          1080.0
+        ],
+        "outputs": [
+          "width_um",
+          "depth_um"
+        ],
+        "avg_slope_vs_P": [
+          10.619903564453125,
+          2.5551300048828125
+        ],
+        "avg_slope_vs_v": [
+          -11.452491760253906,
+          -1.8178863525390625
+        ],
+        "finite_nonneg_all": true,
+        "warn": []
+      }
+    },
+    "IN718": {
+      "material_id": 1,
+      "validity": {
+        "material": "IN718",
+        "values": {
+          "P_W": 300.0,
+          "v_mm_per_s": 900.0,
+          "h_mm": 0.11,
+          "t_mm": 0.03,
+          "LED_J_per_mm": 0.3333333333333333,
+          "VED_J_per_mm3": 101.01010101010102
+        },
+        "global": {
+          "P_W": {
+            "has_range": true,
+            "lo": 100.0,
+            "hi": 600.0,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "v_mm_per_s": {
+            "has_range": true,
+            "lo": 400.0,
+            "hi": 1700.0,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "h_mm": {
+            "has_range": true,
+            "lo": 0.1,
+            "hi": 0.11,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "t_mm": {
+            "has_range": true,
+            "lo": 0.03,
+            "hi": 0.04,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "LED_J_per_mm": {
+            "has_range": true,
+            "lo": 0.0909090909090909,
+            "hi": 1.5,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "VED_J_per_mm3": {
+            "has_range": true,
+            "lo": 20.66115702479339,
+            "hi": 340.90909090909093,
+            "inside": true,
+            "outside_frac": 0.0
+          }
+        },
+        "by_material": {
+          "P_W": {
+            "has_range": true,
+            "lo": 100.0,
+            "hi": 600.0,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "v_mm_per_s": {
+            "has_range": true,
+            "lo": 400.0,
+            "hi": 1100.0,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "h_mm": {
+            "has_range": true,
+            "lo": 0.11,
+            "hi": 0.11,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "t_mm": {
+            "has_range": true,
+            "lo": 0.04,
+            "hi": 0.04,
+            "inside": false,
+            "outside_frac": 10000000000.000002
+          },
+          "LED_J_per_mm": {
+            "has_range": false
+          },
+          "VED_J_per_mm3": {
+            "has_range": false
+          }
+        },
+        "warn": [
+          "TrustBoundary(Material): t_mm is >10% outside IN718 validity window."
+        ],
+        "schema_sha256": "296f3cd804f042aef8915bd3dd0b7c1a8595f2ce9a6e14ff6293ccbff88b59cb"
+      },
+      "pred_at_base": {
+        "width_um": 54.7049446105957,
+        "depth_um": 191.95191955566406
+      },
+      "monotonic_probe": {
+        "material": "IN718",
+        "P_vals": [
+          240.0,
+          270.0,
+          300.0,
+          330.0,
+          360.0
+        ],
+        "v_vals": [
+          720.0,
+          810.0,
+          900.0,
+          990.0000000000001,
+          1080.0
+        ],
+        "outputs": [
+          "width_um",
+          "depth_um"
+        ],
+        "avg_slope_vs_P": [
+          0.9960479736328125,
+          3.109729766845703
+        ],
+        "avg_slope_vs_v": [
+          -1.7190237045288086,
+          -2.3934059143066406
+        ],
+        "finite_nonneg_all": true,
+        "warn": []
+      }
+    },
+    "Ti64": {
+      "material_id": 2,
+      "validity": {
+        "material": "Ti64",
+        "values": {
+          "P_W": 300.0,
+          "v_mm_per_s": 900.0,
+          "h_mm": 0.11,
+          "t_mm": 0.03,
+          "LED_J_per_mm": 0.3333333333333333,
+          "VED_J_per_mm3": 101.01010101010102
+        },
+        "global": {
+          "P_W": {
+            "has_range": true,
+            "lo": 100.0,
+            "hi": 600.0,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "v_mm_per_s": {
+            "has_range": true,
+            "lo": 400.0,
+            "hi": 1700.0,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "h_mm": {
+            "has_range": true,
+            "lo": 0.1,
+            "hi": 0.11,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "t_mm": {
+            "has_range": true,
+            "lo": 0.03,
+            "hi": 0.04,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "LED_J_per_mm": {
+            "has_range": true,
+            "lo": 0.0909090909090909,
+            "hi": 1.5,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "VED_J_per_mm3": {
+            "has_range": true,
+            "lo": 20.66115702479339,
+            "hi": 340.90909090909093,
+            "inside": true,
+            "outside_frac": 0.0
+          }
+        },
+        "by_material": {
+          "P_W": {
+            "has_range": true,
+            "lo": 200.0,
+            "hi": 370.0,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "v_mm_per_s": {
+            "has_range": true,
+            "lo": 1300.0,
+            "hi": 1700.0,
+            "inside": false,
+            "outside_frac": 1.0
+          },
+          "h_mm": {
+            "has_range": true,
+            "lo": 0.1,
+            "hi": 0.1,
+            "inside": false,
+            "outside_frac": 9999999999.999994
+          },
+          "t_mm": {
+            "has_range": true,
+            "lo": 0.03,
+            "hi": 0.03,
+            "inside": true,
+            "outside_frac": 0.0
+          },
+          "LED_J_per_mm": {
+            "has_range": false
+          },
+          "VED_J_per_mm3": {
+            "has_range": false
+          }
+        },
+        "warn": [
+          "TrustBoundary(Material): v_mm_per_s is >10% outside Ti64 validity window.",
+          "TrustBoundary(Material): h_mm is >10% outside Ti64 validity window."
+        ],
+        "schema_sha256": "296f3cd804f042aef8915bd3dd0b7c1a8595f2ce9a6e14ff6293ccbff88b59cb"
+      },
+      "pred_at_base": {
+        "width_um": 59.31022262573242,
+        "depth_um": 190.88174438476562
+      },
+      "monotonic_probe": {
+        "material": "Ti64",
+        "P_vals": [
+          240.0,
+          270.0,
+          300.0,
+          330.0,
+          360.0
+        ],
+        "v_vals": [
+          720.0,
+          810.0,
+          900.0,
+          990.0000000000001,
+          1080.0
+        ],
+        "outputs": [
+          "width_um",
+          "depth_um"
+        ],
+        "avg_slope_vs_P": [
+          1.4817123413085938,
+          3.051593780517578
+        ],
+        "avg_slope_vs_v": [
+          -2.443179130554199,
+          -2.6039886474609375
+        ],
+        "finite_nonneg_all": true,
+        "warn": []
+      }
+    }
+  },
+  "sensibility": {
+    "depth_um": {
+      "316L": 631.4252319335938,
+      "IN718": 191.95191955566406,
+      "Ti64": 190.88174438476562
+    },
+    "warn": [
+      "Sensibility: Ti64 depth < IN718 at fixed (P,v). Check labels/windows."
+    ]
+  },
+  "hard_fail": false,
+  "warnings": [
+    "TrustBoundary(Material): t_mm is >10% outside 316L validity window.",
+    "TrustBoundary(Material): t_mm is >10% outside IN718 validity window.",
+    "TrustBoundary(Material): v_mm_per_s is >10% outside Ti64 validity window.",
+    "TrustBoundary(Material): h_mm is >10% outside Ti64 validity window.",
+    "Sensibility: Ti64 depth < IN718 at fixed (P,v). Check labels/windows."
+  ],
+  "SURROGATE_CONTRACT_ID": "f249f64e4d68b5ef5a8beb2b1129ed08a85d40fc6e0c070081e610f84b8f22bf"
+}

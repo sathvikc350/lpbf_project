@@ -1,0 +1,109 @@
+{
+  "engine_dir": "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852",
+  "registry_path": "/workspaces/lpbf_project/artifacts/phase3_registry_locked_in718_20260212_212457/material_registry.json",
+  "bundle_dir": "/workspaces/lpbf_project/lpbf_to/surrogates/meltpool_v1",
+  "bundle_identity": {
+    "surrogate_config_path": "/workspaces/lpbf_project/lpbf_to/surrogates/meltpool_v1/surrogate_config.json",
+    "cfg_sha256": "6f6d7c27f0a1552ed150a00dc12147cfcb387a8e33fe31445ddd53bd78e516c2",
+    "weights_path": "/workspaces/lpbf_project/lpbf_to/surrogates/meltpool_v1/weights.pt",
+    "weights_sha256": "3d895a6886f490e02453c483b1f584e59ed21deeac1e4f7f29e4660203fdae19",
+    "contract_id": "bd99c66c6359c278c2bf825d3ab42368acf5c0bedc021110699e0bcdcbb2569f"
+  },
+  "probe_mode": "material_aware",
+  "rows": [
+    {
+      "material": "316L",
+      "surrogate_load": "PASS (Hash OK)",
+      "probe": {
+        "P_W": 350.0,
+        "v_mm_per_s": 750.0,
+        "h_mm": 0.11,
+        "t_mm": 0.04
+      },
+      "pred_um": {
+        "width_um": 194.21360778808594,
+        "depth_um": 495.7205810546875
+      },
+      "delta_depth_vs_in718": "+0.7% depth",
+      "trust_score": 1.0
+    },
+    {
+      "material": "IN718",
+      "surrogate_load": "PASS (Hash OK)",
+      "probe": {
+        "P_W": 350.0,
+        "v_mm_per_s": 750.0,
+        "h_mm": 0.11,
+        "t_mm": 0.04
+      },
+      "pred_um": {
+        "width_um": 196.19845581054688,
+        "depth_um": 492.46856689453125
+      },
+      "delta_depth_vs_in718": "Baseline",
+      "trust_score": 1.0
+    },
+    {
+      "material": "Ti64",
+      "surrogate_load": "PASS (Hash OK)",
+      "probe": {
+        "P_W": 285.0,
+        "v_mm_per_s": 1500.0,
+        "h_mm": 0.1,
+        "t_mm": 0.03
+      },
+      "pred_um": {
+        "width_um": 158.0740966796875,
+        "depth_um": 70.5005111694336
+      },
+      "delta_depth_vs_in718": "-85.7% depth (WARN: no P/v overlap)",
+      "trust_score": 0.0
+    }
+  ],
+  "hard_fail": false,
+  "warnings": [
+    "WARN: Low trust coverage for Ti64: 0.0%"
+  ],
+  "anchor": {
+    "316L": {
+      "probe": {
+        "P_W": 350.0,
+        "v_mm_per_s": 1200.0,
+        "h_mm": 0.11,
+        "t_mm": 0.04
+      },
+      "pred_um": {
+        "width_um": 156.12661743164062,
+        "depth_um": 484.6578369140625
+      },
+      "inside_validity": false
+    },
+    "IN718": {
+      "probe": {
+        "P_W": 350.0,
+        "v_mm_per_s": 1200.0,
+        "h_mm": 0.11,
+        "t_mm": 0.04
+      },
+      "pred_um": {
+        "width_um": 158.93344116210938,
+        "depth_um": 481.2091064453125
+      },
+      "inside_validity": false
+    },
+    "Ti64": {
+      "probe": {
+        "P_W": 350.0,
+        "v_mm_per_s": 1200.0,
+        "h_mm": 0.1,
+        "t_mm": 0.03
+      },
+      "pred_um": {
+        "width_um": 197.1248779296875,
+        "depth_um": 77.04463958740234
+      },
+      "inside_validity": false
+    }
+  },
+  "runtime_s": 2.943626642227173
+}

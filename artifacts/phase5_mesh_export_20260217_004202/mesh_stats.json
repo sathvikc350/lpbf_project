@@ -1,0 +1,25 @@
+{
+  "theta_pt": "/workspaces/lpbf_project/artifacts/phase1_engine_locked_in718_20260210_204852/theta_phys_beta64.pt",
+  "voxel_size_mm": 0.25,
+  "threshold": 0.5,
+  "num_vertices": 3976,
+  "num_faces": 7952,
+  "is_watertight": true,
+  "bounds_mm": [
+    [
+      -0.5,
+      -0.5,
+      -0.5
+    ],
+    [
+      31.5,
+      31.5,
+      15.5
+    ]
+  ],
+  "extents_mm": [
+    32.0,
+    32.0,
+    16.0
+  ]
+}
